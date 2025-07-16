@@ -64,6 +64,55 @@ class SearchBarWidget extends StatelessWidget {
               ),
             ),
           ),
+          if (controller.text.isNotEmpty)
+            IconButton(
+              onPressed: () {
+                controller.clear();
+                focusNode.requestFocus();
+              },
+              icon: CustomIconWidget(
+                iconName: 'clear',
+                color: AppTheme.lightTheme.colorScheme.onSurface
+                    .withValues(alpha: 0.6),
+                size: 20,
+              ),
+            ),
+          Container(
+            height: 6.h,
+            width: 1,
+            color: AppTheme.lightTheme.colorScheme.outline,
+          ),
+          IconButton(
+            onPressed: onVoiceSearch,
+            icon: isVoiceSearching
+                ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppTheme.lightTheme.colorScheme.primary,
+                ),
+              ),
+            )
+                : CustomIconWidget(
+              iconName: 'mic',
+              color: isVoiceSearching
+                  ? AppTheme.lightTheme.colorScheme.primary
+                  : AppTheme.lightTheme.colorScheme.onSurface
+                  .withValues(alpha: 0.6),
+              size: 20,
+            ),
+          ),
+          IconButton(
+            onPressed: onBarcodeSearch,
+            icon: CustomIconWidget(
+              iconName: 'qr_code_scanner',
+              color: AppTheme.lightTheme.colorScheme.onSurface
+                  .withValues(alpha: 0.6),
+              size: 20,
+            ),
+          ),
         ],
       ),
     );
