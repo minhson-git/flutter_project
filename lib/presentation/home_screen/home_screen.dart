@@ -186,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     switch (index) {
       case 0:
-        // Already on home
+      // Already on home
         break;
       case 1:
         Navigator.pushNamed(context, '/categories-screen');
@@ -195,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         Navigator.pushNamed(context, '/search-screen');
         break;
       case 3:
-        // Profile - could navigate to profile screen
+      // Profile - could navigate to profile screen
         break;
     }
   }
@@ -313,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         backgroundColor: AppTheme.lightTheme.colorScheme.surface,
         selectedItemColor: AppTheme.lightTheme.primaryColor,
         unselectedItemColor:
-            AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.6),
+        AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.6),
         elevation: 8,
         items: [
           BottomNavigationBarItem(
@@ -322,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               color: _currentBottomNavIndex == 0
                   ? AppTheme.lightTheme.primaryColor
                   : AppTheme.lightTheme.colorScheme.onSurface
-                      .withValues(alpha: 0.6),
+                  .withValues(alpha: 0.6),
               size: 24,
             ),
             label: 'Home',
@@ -333,7 +333,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               color: _currentBottomNavIndex == 1
                   ? AppTheme.lightTheme.primaryColor
                   : AppTheme.lightTheme.colorScheme.onSurface
-                      .withValues(alpha: 0.6),
+                  .withValues(alpha: 0.6),
               size: 24,
             ),
             label: 'Categories',
@@ -344,7 +344,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               color: _currentBottomNavIndex == 2
                   ? AppTheme.lightTheme.primaryColor
                   : AppTheme.lightTheme.colorScheme.onSurface
-                      .withValues(alpha: 0.6),
+                  .withValues(alpha: 0.6),
               size: 24,
             ),
             label: 'Search',
@@ -355,7 +355,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               color: _currentBottomNavIndex == 3
                   ? AppTheme.lightTheme.primaryColor
                   : AppTheme.lightTheme.colorScheme.onSurface
-                      .withValues(alpha: 0.6),
+                  .withValues(alpha: 0.6),
               size: 24,
             ),
             label: 'Profile',
