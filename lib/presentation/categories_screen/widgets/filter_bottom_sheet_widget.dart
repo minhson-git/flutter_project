@@ -66,7 +66,16 @@ class _FilterBottomSheetWidgetState extends State<FilterBottomSheetWidget> {
     });
   }
 
+  void _clearAllFilters() {
+    setState(() {
+      _selectedFilters.clear();
+    });
+  }
 
+  void _applyFilters() {
+    widget.onFiltersChanged(_selectedFilters);
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +110,26 @@ class _FilterBottomSheetWidgetState extends State<FilterBottomSheetWidget> {
                   style: AppTheme.lightTheme.textTheme.titleLarge,
                 ),
                 Row(
-
+                  children: [
+                    TextButton(
+                      onPressed: _clearAllFilters,
+                      child: Text(
+                        'Clear All',
+                        style:
+                            AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.lightTheme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: CustomIconWidget(
+                        iconName: 'close',
+                        color: AppTheme.lightTheme.colorScheme.onSurface,
+                        size: 24,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -129,7 +157,15 @@ class _FilterBottomSheetWidgetState extends State<FilterBottomSheetWidget> {
                 ),
               ),
             ),
-
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _applyFilters,
+                child: Text(
+                  'Apply Filters${_selectedFilters.isNotEmpty ? ' (${_selectedFilters.length})' : ''}',
+                ),
+              ),
+            ),
           ),
         ],
       ),
