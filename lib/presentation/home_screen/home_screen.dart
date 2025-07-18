@@ -227,8 +227,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   },
                 ),
               ),
-
-              // Hero Banner
               SliverToBoxAdapter(
                 child: Container(
                   margin: EdgeInsets.symmetric(horizontal: 4.w),
@@ -242,7 +240,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               SliverToBoxAdapter(child: SizedBox(height: 3.h)),
 
-              // Continue Watching Section
               if (continueWatchingData.isNotEmpty)
                 SliverToBoxAdapter(
                   child: ContentCarouselWidget(
@@ -258,7 +255,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               SliverToBoxAdapter(child: SizedBox(height: 2.h)),
 
-              // Trending Now Section
               SliverToBoxAdapter(
                 child: ContentCarouselWidget(
                   title: "Trending Now",
@@ -273,7 +269,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               SliverToBoxAdapter(child: SizedBox(height: 2.h)),
 
-              // New Releases Section
               SliverToBoxAdapter(
                 child: ContentCarouselWidget(
                   title: "New Releases",
@@ -288,7 +283,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               SliverToBoxAdapter(child: SizedBox(height: 2.h)),
 
-              // Action & Adventure Section
               SliverToBoxAdapter(
                 child: ContentCarouselWidget(
                   title: "Action & Adventure",
