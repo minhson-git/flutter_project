@@ -292,7 +292,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
