@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 import '../core/app_export.dart';
 import '../widgets/custom_error_widget.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // 🚨 CRITICAL: Custom error handling - DO NOT REMOVE
   ErrorWidget.builder = (FlutterErrorDetails details) {
@@ -45,7 +52,7 @@ class MyApp extends StatelessWidget {
         // 🚨 END CRITICAL SECTION
         debugShowCheckedModeBanner: false,
         routes: AppRoutes.routes,
-        initialRoute: AppRoutes.homeScreen,
+        initialRoute: AppRoutes.initial,
       );
     });
   }
