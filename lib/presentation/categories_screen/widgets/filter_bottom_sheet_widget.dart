@@ -22,9 +22,9 @@ class _FilterBottomSheetWidgetState extends State<FilterBottomSheetWidget> {
   late List<String> _selectedFilters;
 
   final Map<String, List<String>> _filterOptions = {
-    'Genre': [
+    'Categories': [
       'Action',
-      'Adventure',
+      'Adventure', 
       'Comedy',
       'Drama',
       'Horror',
@@ -32,7 +32,7 @@ class _FilterBottomSheetWidgetState extends State<FilterBottomSheetWidget> {
       'Romance',
       'Thriller'
     ],
-    'Release Year': [
+    'Year of Release': [
       '2024',
       '2023',
       '2022',
@@ -44,12 +44,12 @@ class _FilterBottomSheetWidgetState extends State<FilterBottomSheetWidget> {
     ],
     'Rating': [
       '9+ Excellent',
-      '8+ Very Good',
+      '8+ Very well',
       '7+ Good',
-      '6+ Fair',
-      '5+ Average'
+      '6+ Pretty good',
+      '5+ Medium'
     ],
-    'Duration': ['< 30 min', '30-60 min', '1-2 hours', '2-3 hours', '3+ hours'],
+    'Length': ['< 30 mins', '30-60 mins', '1-2 hours', '2-3 hours', '3+ hours'],
   };
 
   @override
@@ -106,7 +106,7 @@ class _FilterBottomSheetWidgetState extends State<FilterBottomSheetWidget> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Filters',
+                  'Filter',
                   style: AppTheme.lightTheme.textTheme.titleLarge,
                 ),
                 Row(
@@ -114,7 +114,7 @@ class _FilterBottomSheetWidgetState extends State<FilterBottomSheetWidget> {
                     TextButton(
                       onPressed: _clearAllFilters,
                       child: Text(
-                        'Clear All',
+                        'Delete all',
                         style:
                             AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
                           color: AppTheme.lightTheme.colorScheme.primary,
@@ -162,7 +162,7 @@ class _FilterBottomSheetWidgetState extends State<FilterBottomSheetWidget> {
               child: ElevatedButton(
                 onPressed: _applyFilters,
                 child: Text(
-                  'Apply Filters${_selectedFilters.isNotEmpty ? ' (${_selectedFilters.length})' : ''}',
+                  'Apply filter${_selectedFilters.isNotEmpty ? ' (${_selectedFilters.length})' : ''}',
                 ),
               ),
             ),
