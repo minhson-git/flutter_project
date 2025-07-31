@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../models/movie_model.dart';
+import '../../../models/review_model.dart';
+import '../../../models/user_model.dart';
 
 class ReviewsSectionWidget extends StatefulWidget {
   final List<ReviewModel> reviews;

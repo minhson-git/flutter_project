@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_project/presentation/categories_screen/categories_screen.dart';
 import '../presentation/auth_screen/auth_screen.dart';
+import '../presentation/content_detail_screen/content_detail_screen.dart';
 import '../presentation/home_screen/home_screen.dart';
 import '../presentation/profile_screen/profile_screen.dart';
 import '../presentation/search_screen/search_screen.dart';

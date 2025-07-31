@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../models/watch_history_model.dart';
 
 class ActionButtonsWidget extends StatelessWidget {
   final bool isInWatchlist;

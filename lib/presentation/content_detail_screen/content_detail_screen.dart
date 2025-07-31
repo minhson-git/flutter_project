@@ -3,6 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../models/movie_model.dart';
+import '../../models/review_model.dart';
+import '../../models/user_model.dart';
+import '../../models/watch_history_model.dart';
+import '../../services/auth_service.dart';
+import '../../services/movie_service.dart';
+import '../../services/review_service.dart';
+import '../../services/user_service.dart';
+import '../../services/watch_history_service.dart';
 import './widgets/action_buttons_widget.dart';
 import './widgets/cast_crew_widget.dart';
 import './widgets/description_section_widget.dart';
