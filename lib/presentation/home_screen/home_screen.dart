@@ -5,6 +5,8 @@ import '../../core/app_export.dart';
 import './widgets/content_carousel_widget.dart';
 import './widgets/hero_banner_widget.dart';
 import './widgets/home_header_widget.dart';
+import '../../services/watch_history_service.dart';
+import '../../widgets/custom_image_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,147 +19,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late ScrollController _scrollController;
   int _currentBottomNavIndex = 0;
   bool _isRefreshing = false;
+  bool _isLoading = true;
 
-  // Mock data for content
-  final List<Map<String, dynamic>> continueWatchingData = [
-    {
-      "id": 1,
-      "title": "Stranger Things",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1489599162163-3fb4b4b0b0e4?w=300&h=450&fit=crop",
-      "progress": 0.65,
-      "duration": "45 min",
-      "episode": "S4 E7"
-    },
-    {
-      "id": 2,
-      "title": "The Witcher",
-      "imageUrl":
-          "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?w=300&h=450&fit=crop",
-      "progress": 0.32,
-      "duration": "52 min",
-      "episode": "S2 E3"
-    },
-    {
-      "id": 3,
-      "title": "Ozark",
-      "imageUrl":
-          "https://images.pixabay.com/photo/2019/04/26/07/14/store-4156934_1280.jpg?w=300&h=450&fit=crop",
-      "progress": 0.78,
-      "duration": "48 min",
-      "episode": "S3 E5"
-    }
-  ];
-
-  final List<Map<String, dynamic>> trendingNowData = [
-    {
-      "id": 4,
-      "title": "Wednesday",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=300&h=450&fit=crop",
-      "rating": 8.5,
-      "year": "2022",
-      "genre": "Mystery"
-    },
-    {
-      "id": 5,
-      "title": "House of Dragon",
-      "imageUrl":
-          "https://images.pexels.com/photos/8111357/pexels-photo-8111357.jpeg?w=300&h=450&fit=crop",
-      "rating": 9.2,
-      "year": "2022",
-      "genre": "Fantasy"
-    },
-    {
-      "id": 6,
-      "title": "The Bear",
-      "imageUrl":
-          "https://images.pixabay.com/photo/2017/11/24/10/43/ticket-2974645_1280.jpg?w=300&h=450&fit=crop",
-      "rating": 8.8,
-      "year": "2022",
-      "genre": "Comedy"
-    }
-  ];
-
-  final List<Map<String, dynamic>> newReleasesData = [
-    {
-      "id": 7,
-      "title": "Glass Onion",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1489599162163-3fb4b4b0b0e4?w=300&h=450&fit=crop",
-      "releaseDate": "2023-12-15",
-      "genre": "Mystery",
-      "isNew": true
-    },
-    {
-      "id": 8,
-      "title": "Avatar 2",
-      "imageUrl":
-          "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg?w=300&h=450&fit=crop",
-      "releaseDate": "2023-12-10",
-      "genre": "Sci-Fi",
-      "isNew": true
-    },
-    {
-      "id": 9,
-      "title": "Top Gun Maverick",
-      "imageUrl":
-          "https://images.pixabay.com/photo/2019/04/26/07/14/store-4156934_1280.jpg?w=300&h=450&fit=crop",
-      "releaseDate": "2023-12-08",
-      "genre": "Action",
-      "isNew": true
-    }
-  ];
-
-  final List<Map<String, dynamic>> actionAdventureData = [
-    {
-      "id": 10,
-      "title": "John Wick 4",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=300&h=450&fit=crop",
-      "rating": 8.9,
-      "year": "2023",
-      "genre": "Action"
-    },
-    {
-      "id": 11,
-      "title": "Mission Impossible",
-      "imageUrl":
-          "https://images.pexels.com/photos/8111357/pexels-photo-8111357.jpeg?w=300&h=450&fit=crop",
-      "rating": 8.7,
-      "year": "2023",
-      "genre": "Adventure"
-    },
-    {
-      "id": 12,
-      "title": "Fast X",
-      "imageUrl":
-          "https://images.pixabay.com/photo/2017/11/24/10/43/ticket-2974645_1280.jpg?w=300&h=450&fit=crop",
-      "rating": 7.8,
-      "year": "2023",
-      "genre": "Action"
-    }
-  ];
-
-  final List<Map<String, dynamic>> heroData = [
-    {
-      "id": 13,
-      "title": "The Last of Us",
-      "subtitle": "Experience the post-apocalyptic world",
-      "description":
-          "A gripping tale of survival in a world overrun by infected creatures.",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1489599162163-3fb4b4b0b0e4?w=800&h=600&fit=crop",
-      "rating": 9.5,
-      "year": "2023",
-      "genre": "Drama"
-    }
-  ];
+  // Firebase data
+  List<MovieModel> _featuredMovies = [];
+  List<MovieModel> _continueWatchingMovies = [];
+  List<MovieModel> _trendingMovies = [];
+  List<MovieModel> _newReleaseMovies = [];
+  List<MovieModel> _actionMovies = [];
+  List<CategoryModel> _categories = [];
+  UserModel? _currentUser;
+  
+  // Store watch history data to use in conversion
+  List<WatchHistoryModel> _watchHistoryData = [];
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    _loadFirebaseData();
   }
 
   @override
@@ -171,12 +51,95 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _isRefreshing = true;
     });
 
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 2));
+    await _loadFirebaseData();
 
     setState(() {
       _isRefreshing = false;
     });
+  }
+
+  Future<void> _loadFirebaseData() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // Load current user
+      final currentUserId = AuthService.currentUser?.uid;
+      if (currentUserId != null) {
+        _currentUser = await UserService.getUserProfile(currentUserId);
+      }
+
+      // Load different sections
+      await Future.wait([
+        _loadFeaturedMovies(),
+        _loadContinueWatching(),
+        _loadTrendingMovies(),
+        _loadNewReleases(),
+        _loadActionMovies(),
+        _loadCategories(),
+      ]);
+
+      print('✅ Loaded Firebase data successfully');
+    } catch (e) {
+      print('❌ Error loading Firebase data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi tải dữ liệu: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadFeaturedMovies() async {
+    _featuredMovies = await MovieService.getFeaturedMovies();
+    print('🎬 Loaded ${_featuredMovies.length} featured movies');
+  }
+
+  Future<void> _loadContinueWatching() async {
+    final currentUserId = AuthService.currentUser?.uid;
+    print('🔍 Loading continue watching for user: $currentUserId');
+    
+    if (currentUserId != null) {
+      try {
+        _watchHistoryData = await WatchHistoryService.getUserWatchHistory(currentUserId);
+        print('📺 Found ${_watchHistoryData.length} watch history items');
+        
+        if (_watchHistoryData.isNotEmpty) {
+          final movieIds = _watchHistoryData.map((h) => h.movieId).toList();
+          print('🎬 Movie IDs to load: $movieIds');
+          
+          _continueWatchingMovies = await MovieService.getMoviesByIds(movieIds);
+          print('✅ Loaded ${_continueWatchingMovies.length} continue watching movies');
+        } else {
+          print('⚠️ No watch history found for user');
+          _continueWatchingMovies = [];
+        }
+      } catch (e) {
+        print('❌ Error loading continue watching: $e');
+        _continueWatchingMovies = [];
+        _watchHistoryData = [];
+      }
+    } else {
+      print('⚠️ No current user found');
+      _continueWatchingMovies = [];
+      _watchHistoryData = [];
+    }
+  }
+
+  Future<void> _loadTrendingMovies() async {
+    _trendingMovies = await MovieService.getPopularMovies();
+    print('📈 Loaded ${_trendingMovies.length} trending movies');
+  }
+
+  Future<void> _loadNewReleases() async {
+    _newReleaseMovies = await MovieService.getLatestMovies(limit: 10);
+  }
+
+  Future<void> _loadActionMovies() async {
+    _actionMovies = await MovieService.getMoviesByGenre('Action');
+  }
+
+  Future<void> _loadCategories() async {
+    _categories = await CategoryService.getAllCategories();
   }
 
   void _onBottomNavTap(int index) {
@@ -189,26 +152,82 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       // Already on home
         break;
       case 1:
-        Navigator.pushNamed(context, '/categories-screen');
+        _navigateToCategories();
         break;
       case 2:
-        Navigator.pushNamed(context, '/search-screen');
+        _navigateToSearch();
         break;
       case 3:
-      // Profile - could navigate to profile screen
+        _navigateToProfile();
         break;
+    }
+  }
+
+  Future<void> _navigateToSearch() async {
+    final result = await Navigator.pushNamed(context, AppRoutes.searchScreen);
+    if (result is int) {
+      // Update bottom navigation to the returned tab index
+      setState(() {
+        _currentBottomNavIndex = result;
+      });
+    } else {
+      // If no result (system back button), reset to home tab
+      setState(() {
+        _currentBottomNavIndex = 0;
+      });
+    }
+  }
+
+  Future<void> _navigateToCategories() async {
+    final result = await Navigator.pushNamed(context, AppRoutes.categoriesScreen);
+    if (result is int) {
+      // Update bottom navigation to the returned tab index
+      setState(() {
+        _currentBottomNavIndex = result;
+      });
+    } else {
+      // If no result (system back button), reset to home tab
+      setState(() {
+        _currentBottomNavIndex = 0;
+      });
+    }
+  }
+
+  Future<void> _navigateToProfile() async {
+    final result = await Navigator.pushNamed(context, AppRoutes.profileScreen);
+    if (result is int) {
+      // Update bottom navigation to the returned tab index
+      setState(() {
+        _currentBottomNavIndex = result;
+      });
+    } else {
+      // If no result (system back button), reset to home tab
+      setState(() {
+        _currentBottomNavIndex = 0;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0D0D0D),
+        body: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE50914)),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFF0D0D0D), // Dark background
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _handleRefresh,
-          color: AppTheme.lightTheme.primaryColor,
-          backgroundColor: AppTheme.lightTheme.colorScheme.surface,
+          color: const Color(0xFFE50914), // Netflix red
+          backgroundColor: const Color(0xFF1A1A1A),
           child: CustomScrollView(
             controller: _scrollController,
             slivers: [
@@ -217,83 +236,106 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 floating: true,
                 pinned: true,
                 elevation: 0,
-                backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
+                backgroundColor: const Color(0xFF0D0D0D),
                 automaticallyImplyLeading: false,
-                flexibleSpace: HomeHeaderWidget(
-                  onSearchTap: () =>
-                      Navigator.pushNamed(context, '/search-screen'),
-                  onProfileTap: () {
-                    // Handle profile tap
-                  },
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 4.w),
-                  child: HeroBannerWidget(
-                    heroData: heroData.isNotEmpty ? heroData.first : {},
-                    onWatchNowTap: () =>
-                        Navigator.pushNamed(context, '/content-detail-screen'),
+                toolbarHeight: 8.h,
+                flexibleSpace: SafeArea(
+                  child: HomeHeaderWidget(
+                    onSearchTap: () => _navigateToSearch(),
+                    onProfileTap: () {
+                      Navigator.pushNamed(context, AppRoutes.profileScreen);
+                    },
                   ),
                 ),
               ),
+
+              // Hero Banner - Featured Movie
+              if (_featuredMovies.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: EdgeInsets.fromLTRB(4.w, 1.h, 4.w, 0), // Add top margin
+                    child: HeroBannerWidget(
+                      movie: _featuredMovies.first,
+                      onWatchNowTap: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.contentDetailScreen,
+                        arguments: _featuredMovies.first,
+                      ),
+                    ),
+                  ),
+                ),
 
               SliverToBoxAdapter(child: SizedBox(height: 3.h)),
 
-              if (continueWatchingData.isNotEmpty)
+              // Continue Watching Section
+              if (_continueWatchingMovies.isNotEmpty)
                 SliverToBoxAdapter(
                   child: ContentCarouselWidget(
                     title: "Continue Watching",
-                    contentData: continueWatchingData,
+                    contentData: _convertMoviesToContentData(_continueWatchingMovies),
                     carouselType: CarouselType.continueWatching,
-                    onContentTap: (content) =>
-                        Navigator.pushNamed(context, '/content-detail-screen'),
-                    onMoreTap: () =>
-                        Navigator.pushNamed(context, '/categories-screen'),
+                    onContentTap: (content) => Navigator.pushNamed(
+                      context,
+                      AppRoutes.contentDetailScreen,
+                      arguments: _getMovieFromContentData(content),
+                    ),
+                    onMoreTap: () => _navigateToCategories(),
                   ),
                 ),
 
               SliverToBoxAdapter(child: SizedBox(height: 2.h)),
 
-              SliverToBoxAdapter(
-                child: ContentCarouselWidget(
-                  title: "Trending Now",
-                  contentData: trendingNowData,
-                  carouselType: CarouselType.trending,
-                  onContentTap: (content) =>
-                      Navigator.pushNamed(context, '/content-detail-screen'),
-                  onMoreTap: () =>
-                      Navigator.pushNamed(context, '/categories-screen'),
+              // Trending Now Section
+              if (_trendingMovies.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: ContentCarouselWidget(
+                    title: "Trending Now",
+                    contentData: _convertMoviesToContentData(_trendingMovies),
+                    carouselType: CarouselType.trending,
+                    onContentTap: (content) => Navigator.pushNamed(
+                      context,
+                      AppRoutes.contentDetailScreen,
+                      arguments: _getMovieFromContentData(content),
+                    ),
+                    onMoreTap: () => _navigateToCategories(),
+                  ),
                 ),
-              ),
 
               SliverToBoxAdapter(child: SizedBox(height: 2.h)),
 
-              SliverToBoxAdapter(
-                child: ContentCarouselWidget(
-                  title: "New Releases",
-                  contentData: newReleasesData,
-                  carouselType: CarouselType.newReleases,
-                  onContentTap: (content) =>
-                      Navigator.pushNamed(context, '/content-detail-screen'),
-                  onMoreTap: () =>
-                      Navigator.pushNamed(context, '/categories-screen'),
+              // New Releases Section
+              if (_newReleaseMovies.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: ContentCarouselWidget(
+                    title: "New Releases",
+                    contentData: _convertMoviesToContentData(_newReleaseMovies),
+                    carouselType: CarouselType.newReleases,
+                    onContentTap: (content) => Navigator.pushNamed(
+                      context,
+                      AppRoutes.contentDetailScreen,
+                      arguments: _getMovieFromContentData(content),
+                    ),
+                    onMoreTap: () => _navigateToCategories(),
+                  ),
                 ),
-              ),
 
               SliverToBoxAdapter(child: SizedBox(height: 2.h)),
 
-              SliverToBoxAdapter(
-                child: ContentCarouselWidget(
-                  title: "Action & Adventure",
-                  contentData: actionAdventureData,
-                  carouselType: CarouselType.actionAdventure,
-                  onContentTap: (content) =>
-                      Navigator.pushNamed(context, '/content-detail-screen'),
-                  onMoreTap: () =>
-                      Navigator.pushNamed(context, '/categories-screen'),
+              // Action & Adventure Section
+              if (_actionMovies.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: ContentCarouselWidget(
+                    title: "Action & Adventure",
+                    contentData: _convertMoviesToContentData(_actionMovies),
+                    carouselType: CarouselType.actionAdventure,
+                    onContentTap: (content) => Navigator.pushNamed(
+                      context,
+                      AppRoutes.contentDetailScreen,
+                      arguments: _getMovieFromContentData(content),
+                    ),
+                    onMoreTap: () => _navigateToCategories(),
+                  ),
                 ),
-              ),
 
               SliverToBoxAdapter(child: SizedBox(height: 10.h)),
             ],
@@ -304,67 +346,94 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         currentIndex: _currentBottomNavIndex,
         onTap: _onBottomNavTap,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: AppTheme.lightTheme.colorScheme.surface,
-        selectedItemColor: AppTheme.lightTheme.primaryColor,
-        unselectedItemColor:
-        AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.6),
+        backgroundColor: const Color(0xFF1A1A1A),
+        selectedItemColor: const Color(0xFFE50914),
+        unselectedItemColor: Colors.white54,
         elevation: 8,
         items: [
           BottomNavigationBarItem(
-            icon: CustomIconWidget(
-              iconName: 'home',
-              color: _currentBottomNavIndex == 0
-                  ? AppTheme.lightTheme.primaryColor
-                  : AppTheme.lightTheme.colorScheme.onSurface
-                  .withValues(alpha: 0.6),
-              size: 24,
-            ),
+            icon: Icon(Icons.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: CustomIconWidget(
-              iconName: 'category',
-              color: _currentBottomNavIndex == 1
-                  ? AppTheme.lightTheme.primaryColor
-                  : AppTheme.lightTheme.colorScheme.onSurface
-                  .withValues(alpha: 0.6),
-              size: 24,
-            ),
+            icon: Icon(Icons.category),
             label: 'Categories',
           ),
           BottomNavigationBarItem(
-            icon: CustomIconWidget(
-              iconName: 'search',
-              color: _currentBottomNavIndex == 2
-                  ? AppTheme.lightTheme.primaryColor
-                  : AppTheme.lightTheme.colorScheme.onSurface
-                  .withValues(alpha: 0.6),
-              size: 24,
-            ),
+            icon: Icon(Icons.search),
             label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: CustomIconWidget(
-              iconName: 'person',
-              color: _currentBottomNavIndex == 3
-                  ? AppTheme.lightTheme.primaryColor
-                  : AppTheme.lightTheme.colorScheme.onSurface
-                  .withValues(alpha: 0.6),
-              size: 24,
-            ),
+            icon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/categories-screen'),
-        backgroundColor: AppTheme.lightTheme.primaryColor,
-        child: CustomIconWidget(
-          iconName: 'apps',
-          color: AppTheme.lightTheme.colorScheme.onPrimary,
-          size: 24,
-        ),
-      ),
     );
+  }
+
+  // Helper methods to convert MovieModel to content data format
+  Map<String, dynamic> _convertMovieToHeroData(MovieModel movie) {
+    return {
+      "id": movie.id,
+      "title": movie.title,
+      "subtitle": movie.genres.join(', '),
+      "description": movie.description,
+      "imageUrl": movie.backdropUrl ?? movie.posterUrl ?? '',
+      "rating": movie.rating,
+      "year": movie.releaseYear.toString(),
+      "genre": movie.genres.isNotEmpty ? movie.genres.first : '',
+    };
+  }
+
+  List<Map<String, dynamic>> _convertMoviesToContentData(List<MovieModel> movies, [bool isContinueWatching = false]) {
+    return movies.map((movie) {
+      if (isContinueWatching) {
+        // Find corresponding watch history
+        final watchHistory = _watchHistoryData.firstWhere(
+          (h) => h.movieId == movie.id,
+          orElse: () => WatchHistoryModel(
+            id: '',
+            userId: '',
+            movieId: movie.id.toString(),
+            watchDuration: 0,
+            totalDuration: movie.duration * 60,
+            isCompleted: false,
+            lastWatchedAt: DateTime.now(),
+            watchedAt: DateTime.now(),
+          ),
+        );
+        
+        final progress = watchHistory.totalDuration > 0 
+            ? watchHistory.watchDuration / watchHistory.totalDuration 
+            : 0.0;
+            
+        return {
+          "id": movie.id,
+          "title": movie.title,
+          "imageUrl": movie.posterUrl ?? '',
+          "progress": progress.clamp(0.0, 1.0),
+          "duration": "${movie.duration} min",
+          "episode": "Movie",
+          "movieData": movie,
+          "watchHistory": watchHistory,
+        };
+      } else {
+        return {
+          "id": movie.id,
+          "title": movie.title,
+          "imageUrl": movie.posterUrl ?? '',
+          "rating": movie.rating,
+          "year": movie.releaseYear.toString(),
+          "genre": movie.genres.isNotEmpty ? movie.genres.first : '',
+          "isNew": movie.releaseYear >= DateTime.now().year - 1,
+          "movieData": movie,
+        };
+      }
+    }).toList();
+  }
+
+  MovieModel _getMovieFromContentData(Map<String, dynamic> content) {
+    return content["movieData"] as MovieModel;
   }
 }
