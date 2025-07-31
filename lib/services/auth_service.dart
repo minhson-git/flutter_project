@@ -1,9 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_project/services/user_service.dart';
 import '../models/user_model.dart';
 import 'firebase_service.dart';
-import 'user_service.dart';
-import 'category_service.dart';
-import 'playlist_service.dart';
 
 class AuthService {
   static final FirebaseAuth _auth = FirebaseService.auth;
@@ -29,7 +27,7 @@ class AuthService {
         email: email,
         password: password,
       );
-      print('✅ Auth user created: ${userCredential.user?.uid}');
+      print('Auth user created: ${userCredential.user?.uid}');
 
       // Create user profile in Firestore
       if (userCredential.user != null) {
@@ -45,21 +43,21 @@ class AuthService {
           );
 
           await UserService.createUserProfile(userModel);
-          print('✅ User profile created');
+          print('User profile created');
         } catch (profileError) {
           print('⚠️ Warning - Could not create user profile: $profileError');
           // Skip profile creation, return successful auth
-          print('🔄 Continuing without profile creation');
+          print('Continuing without profile creation');
         }
       }
 
-      print('✅ Đăng ký hoàn tất');
+      print('Đăng ký hoàn tất');
       return userCredential;
     } on FirebaseAuthException catch (e) {
-      print('❌ Firebase Auth Error: ${e.code} - ${e.message}');
+      print('Firebase Auth Error: ${e.code} - ${e.message}');
       throw Exception(_handleAuthError(e));
     } catch (e) {
-      print('❌ Signup Error: $e');
+      print('Signup Error: $e');
       throw Exception('Đã xảy ra lỗi không xác định: $e');
     }
   }
@@ -70,19 +68,19 @@ class AuthService {
     required String password,
   }) async {
     try {
-      print('🔄 Đang đăng nhập với email: $email');
+      print('Đang đăng nhập với email: $email');
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      print('✅ Đăng nhập thành công: ${userCredential.user?.uid}');
+      print('Đăng nhập thành công: ${userCredential.user?.uid}');
 
       return userCredential;
     } on FirebaseAuthException catch (e) {
-      print('❌ Firebase Auth Login Error: ${e.code} - ${e.message}');
+      print('Firebase Auth Login Error: ${e.code} - ${e.message}');
       throw Exception(_handleAuthError(e));
     } catch (e) {
-      print('❌ Login Error: $e');
+      print('Login Error: $e');
       throw Exception('Đã xảy ra lỗi không xác định: $e');
     }
   }
@@ -130,7 +128,7 @@ class AuthService {
       if (user != null) {
         await user.updateEmail(newEmail);
         // Update email in user profile
-        await UserService.updateUserProfile(user.uid as UserModel, {'email': newEmail});
+        await UserService.updateUserProfile(user.uid, {'email': newEmail});
       } else {
         throw Exception('Không tìm thấy người dùng');
       }
