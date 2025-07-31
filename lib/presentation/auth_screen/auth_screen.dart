@@ -266,27 +266,6 @@ class _AuthScreenState extends State<AuthScreen> {
                         : 'Đã có tài khoản? Đăng nhập',
                   ),
                 ),
-
-                const SizedBox(height: 24),
-
-                // Demo button
-                OutlinedButton(
-                  onPressed: _isLoading ? null : _initializeSampleData,
-                  child: const Text('Khởi tạo dữ liệu mẫu'),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Debug button
-                if (!_isLogin)
-                  OutlinedButton(
-                    onPressed: _isLoading ? null : _testFirebaseConnection,
-                    child: const Text('Test Firebase Connection'),
-                  ),
-
-                const SizedBox(height: 8),
-
-                // Diagnostic button
                 // OutlinedButton(
                 //   onPressed: () => Navigator.pushNamed(context, AppRoutes.diagnosticScreen),
                 //   child: const Text('🔧 Firebase Diagnostics'),
@@ -297,92 +276,5 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _initializeSampleData() async {
-    setState(() => _isLoading = true);
-    try {
-      print('Bắt đầu khởi tạo dữ liệu mẫu...');
-
-      // Kiểm tra Firebase connection trước
-      await FirebaseService.firestore.enableNetwork();
-      print('Firebase connection OK');
-
-      // Khởi tạo dữ liệu
-      // await DataInitService.initializeSampleData();
-      // print('✅ Dữ liệu mẫu đã được khởi tạo');
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Dữ liệu mẫu đã được khởi tạo thành công'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      print('Lỗi khởi tạo dữ liệu: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khởi tạo dữ liệu: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 8),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _testFirebaseConnection() async {
-    setState(() => _isLoading = true);
-    try {
-      print('🔥 Testing Firebase connection...');
-
-      // Test Firestore
-      await FirebaseService.firestore.enableNetwork();
-      print('✅ Firestore connection OK');
-
-      // Initialize sample data
-      // print('📊 Initializing sample data...');
-      // await DataInitService.initializeSampleData();
-      // print('✅ Sample data initialized');
-
-      // Test Auth
-      String? currentUserId = AuthService.currentUser?.uid;
-      print('✅ Auth current user: $currentUserId');
-
-      // Test collection access
-      var testQuery = await FirebaseService.moviesCollection.limit(1).get();
-      print('✅ Movies collection accessible: ${testQuery.docs.length} docs');
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Firebase kết nối thành công và dữ liệu mẫu đã sẵn sàng'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      print('Firebase connection failed: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Firebase connection failed: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 8),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 }
