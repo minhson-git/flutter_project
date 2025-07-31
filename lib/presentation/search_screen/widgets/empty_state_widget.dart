@@ -29,13 +29,13 @@ class EmptyStateWidget extends StatelessWidget {
       case EmptyStateType.noQuery:
         title = 'Start Your Search';
         description =
-        'Enter a movie title, actor name, or genre to discover amazing content';
+            'Enter a movie title, actor name, or genre to discover amazing content';
         iconName = 'search';
         break;
       case EmptyStateType.noResults:
         title = 'No Results Found';
         description =
-        'Try adjusting your search terms or filters to find what you\'re looking for';
+            'Try adjusting your search terms or filters to find what you\'re looking for';
         iconName = 'search_off';
         buttonText = 'Clear Filters';
         onButtonPressed = () {

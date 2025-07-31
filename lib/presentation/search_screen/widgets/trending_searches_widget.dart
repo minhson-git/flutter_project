@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
-
 import '../../../core/app_export.dart';
 
 class TrendingSearchesWidget extends StatelessWidget {
@@ -68,7 +67,7 @@ class TrendingSearchesWidget extends StatelessWidget {
                         child: Text(
                           '${index + 1}',
                           style:
-                          AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                              AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                             color: AppTheme.lightTheme.colorScheme.primary,
                             fontWeight: FontWeight.w600,
                           ),
