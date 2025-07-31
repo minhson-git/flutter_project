@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../models/movie_model.dart';
 
 class HeroBannerWidget extends StatelessWidget {
   final MovieModel? movie;

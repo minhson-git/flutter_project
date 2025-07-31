@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/app_export.dart';
+import '../../../models/movie_model.dart';
+import '../../../services/movie_service.dart';
 
 class FirebaseMoviesWidget extends StatefulWidget {
   const FirebaseMoviesWidget({super.key});

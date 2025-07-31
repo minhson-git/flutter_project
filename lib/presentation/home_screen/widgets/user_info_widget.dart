@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/app_export.dart';
+import '../../../models/user_model.dart';
+import '../../../services/auth_service.dart';
+import '../../../services/user_service.dart';
 
 class UserInfoWidget extends StatefulWidget {
   const UserInfoWidget({super.key, required UserModel user});
