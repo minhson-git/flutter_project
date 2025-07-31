@@ -129,14 +129,14 @@ class PlaylistService {
     try {
       List<Map<String, dynamic>> defaultPlaylists = [
         {
-          'name': 'Xem sau',
-          'description': 'Danh sách phim để xem sau',
+          'name': 'Watch later',
+          'description': 'List of movies to watch later',
           'isDefault': true,
           'isPublic': false,
         },
         {
-          'name': 'Yêu thích',
-          'description': 'Danh sách phim yêu thích',
+          'name': 'Favorite',
+          'description': 'Favorite movie list',
           'isDefault': true,
           'isPublic': false,
         },

@@ -38,9 +38,9 @@ class UserService {
       };
       
       await _usersCollection.doc(user.id).set(userData);
-      print('✅ User profile created successfully');
+      print('User profile created successfully');
     } catch (e) {
-      print('❌ Error creating user profile: $e');
+      print('Error creating user profile: $e');
       throw Exception(FirebaseService.handleFirestoreError(e));
     }
   }
@@ -71,7 +71,7 @@ class UserService {
   // Update user profile with UserModel
   static Future<void> updateUserProfile(UserModel user, [Map<String, String>? map]) async {
     try {
-      print('📝 Updating user profile for: ${user.id}');
+      print('Updating user profile for: ${user.id}');
       
       Map<String, dynamic> userData = {
         'email': user.email,
@@ -88,9 +88,9 @@ class UserService {
       };
       
       await _usersCollection.doc(user.id).update(userData);
-      print('✅ User profile updated successfully');
+      print('User profile updated successfully');
     } catch (e) {
-      print('❌ Error updating user profile: $e');
+      print('Error updating user profile: $e');
       throw _handleError(e);
     }
   }

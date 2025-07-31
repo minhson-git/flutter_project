@@ -67,86 +67,86 @@ class CategoryService {
   }
 
   // Create default categories if they don't exist
-  static Future<void> createDefaultCategories() async {
-    try {
-      print('📂 Bắt đầu tạo default categories...');
-      
-      List<Map<String, dynamic>> defaultCategories = [
-        {
-          'name': 'Hành động',
-          'description': 'Phim hành động và phiêu lưu',
-          'sortOrder': 1,
-        },
-        {
-          'name': 'Hài kịch',
-          'description': 'Phim hài và giải trí',
-          'sortOrder': 2,
-        },
-        {
-          'name': 'Kinh dị',
-          'description': 'Phim kinh dị và rùng rợn',
-          'sortOrder': 3,
-        },
-        {
-          'name': 'Lãng mạn',
-          'description': 'Phim lãng mạn và tình cảm',
-          'sortOrder': 4,
-        },
-        {
-          'name': 'Khoa học viễn tưởng',
-          'description': 'Phim khoa học viễn tưởng',
-          'sortOrder': 5,
-        },
-        {
-          'name': 'Tài liệu',
-          'description': 'Phim tài liệu và giáo dục',
-          'sortOrder': 6,
-        },
-        {
-          'name': 'Hoạt hình',
-          'description': 'Phim hoạt hình và anime',
-          'sortOrder': 7,
-        },
-        {
-          'name': 'Thể thao',
-          'description': 'Phim thể thao và thi đấu',
-          'sortOrder': 8,
-        },
-      ];
-
-      for (Map<String, dynamic> categoryData in defaultCategories) {
-        try {
-          print('🔍 Kiểm tra category: ${categoryData['name']}');
-          // Check if category already exists
-          CategoryModel? existingCategory = await getCategoryByName(categoryData['name']);
-          
-          if (existingCategory == null) {
-            print('➕ Tạo category mới: ${categoryData['name']}');
-            CategoryModel category = CategoryModel(
-              name: categoryData['name'],
-              description: categoryData['description'],
-              sortOrder: categoryData['sortOrder'],
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            );
-            
-            await _categoriesCollection.add(category.toFirestore());
-            print('✅ Category created: ${categoryData['name']}');
-          } else {
-            print('📱 Category đã tồn tại: ${categoryData['name']}');
-          }
-        } catch (e) {
-          print('❌ Lỗi tạo category ${categoryData['name']}: $e');
-          throw e;
-        }
-      }
-      
-      print('✅ Hoàn thành tạo default categories');
-    } catch (e) {
-      print('❌ Lỗi createDefaultCategories: $e');
-      throw Exception(FirebaseService.handleFirestoreError(e));
-    }
-  }
+  // static Future<void> createDefaultCategories() async {
+  //   try {
+  //     print('📂 Bắt đầu tạo default categories...');
+  //
+  //     List<Map<String, dynamic>> defaultCategories = [
+  //       {
+  //         'name': 'Hành động',
+  //         'description': 'Phim hành động và phiêu lưu',
+  //         'sortOrder': 1,
+  //       },
+  //       {
+  //         'name': 'Hài kịch',
+  //         'description': 'Phim hài và giải trí',
+  //         'sortOrder': 2,
+  //       },
+  //       {
+  //         'name': 'Kinh dị',
+  //         'description': 'Phim kinh dị và rùng rợn',
+  //         'sortOrder': 3,
+  //       },
+  //       {
+  //         'name': 'Lãng mạn',
+  //         'description': 'Phim lãng mạn và tình cảm',
+  //         'sortOrder': 4,
+  //       },
+  //       {
+  //         'name': 'Khoa học viễn tưởng',
+  //         'description': 'Phim khoa học viễn tưởng',
+  //         'sortOrder': 5,
+  //       },
+  //       {
+  //         'name': 'Tài liệu',
+  //         'description': 'Phim tài liệu và giáo dục',
+  //         'sortOrder': 6,
+  //       },
+  //       {
+  //         'name': 'Hoạt hình',
+  //         'description': 'Phim hoạt hình và anime',
+  //         'sortOrder': 7,
+  //       },
+  //       {
+  //         'name': 'Thể thao',
+  //         'description': 'Phim thể thao và thi đấu',
+  //         'sortOrder': 8,
+  //       },
+  //     ];
+  //
+  //     for (Map<String, dynamic> categoryData in defaultCategories) {
+  //       try {
+  //         print('Kiểm tra category: ${categoryData['name']}');
+  //         // Check if category already exists
+  //         CategoryModel? existingCategory = await getCategoryByName(categoryData['name']);
+  //
+  //         if (existingCategory == null) {
+  //           print('➕ Tạo category mới: ${categoryData['name']}');
+  //           CategoryModel category = CategoryModel(
+  //             name: categoryData['name'],
+  //             description: categoryData['description'],
+  //             sortOrder: categoryData['sortOrder'],
+  //             createdAt: DateTime.now(),
+  //             updatedAt: DateTime.now(),
+  //           );
+  //
+  //           await _categoriesCollection.add(category.toFirestore());
+  //           print('✅ Category created: ${categoryData['name']}');
+  //         } else {
+  //           print('📱 Category đã tồn tại: ${categoryData['name']}');
+  //         }
+  //       } catch (e) {
+  //         print('❌ Lỗi tạo category ${categoryData['name']}: $e');
+  //         throw e;
+  //       }
+  //     }
+  //
+  //     print('✅ Hoàn thành tạo default categories');
+  //   } catch (e) {
+  //     print('❌ Lỗi createDefaultCategories: $e');
+  //     throw Exception(FirebaseService.handleFirestoreError(e));
+  //   }
+  // }
 
   // Add new category
   static Future<String> addCategory(CategoryModel category) async {

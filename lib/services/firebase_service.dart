@@ -27,17 +27,17 @@ class FirebaseService {
     if (error is FirebaseException) {
       switch (error.code) {
         case 'permission-denied':
-          return 'Bạn không có quyền thực hiện hành động này.';
+          return 'You do not have permission to perform this action.';
         case 'not-found':
-          return 'Dữ liệu không tồn tại.';
+          return 'Data does not exist.';
         case 'already-exists':
-          return 'Dữ liệu đã tồn tại.';
+          return 'Data already exists.';
         case 'unavailable':
-          return 'Dịch vụ hiện không khả dụng. Vui lòng thử lại.';
+          return 'Service is currently unavailable. Please try again.';
         default:
-          return 'Đã xảy ra lỗi: ${error.message}';
+          return 'An error occurred: ${error.message}';
       }
     }
-    return 'Đã xảy ra lỗi không xác định.';
+    return 'An unknown error occurred.';
   }
 }

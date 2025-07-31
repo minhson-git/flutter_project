@@ -36,14 +36,14 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() => _isLoading = true);
 
     try {
-      print('Bắt đầu ${_isLogin ? "đăng nhập" : "đăng ký"}...');
+      print('Start ${_isLogin ? "login" : "register"}...');
 
       if (_isLogin) {
         final result = await AuthService.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
-        print('Đăng nhập thành công: ${result.user?.uid}');
+        print('Login successful: ${result.user?.uid}');
       } else {
         final result = await AuthService.signUpWithEmailAndPassword(
           email: _emailController.text.trim(),
@@ -51,22 +51,22 @@ class _AuthScreenState extends State<AuthScreen> {
           username: _usernameController.text.trim(),
           fullName: _fullNameController.text.trim().isEmpty ? null : _fullNameController.text.trim(),
         );
-        print('Đăng ký thành công: ${result.user?.uid}');
+        print('Registration successful: ${result.user?.uid}');
       }
 
       // Check current user after auth
       final currentUser = AuthService.currentUser;
-      print('🔍 Current user sau auth: ${currentUser?.uid}');
-      print('🔍 Email: ${currentUser?.email}');
+      print('Current user sau auth: ${currentUser?.uid}');
+      print('Email: ${currentUser?.email}');
 
       // Navigate to home screen
       if (mounted && currentUser != null) {
-        print('🚀 Điều hướng đến HomeScreen...');
+        print('Navigate to HomeScreen...');
 
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isLogin ? 'Đăng nhập thành công!' : 'Đăng ký thành công!'),
+            content: Text(_isLogin ? 'Login successful!' : 'Registration successful!'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -76,7 +76,7 @@ class _AuthScreenState extends State<AuthScreen> {
         await Future.delayed(const Duration(milliseconds: 800));
         Navigator.pushReplacementNamed(context, AppRoutes.homeScreen);
       } else {
-        print('Không thể điều hướng: mounted=$mounted, currentUser=$currentUser');
+        print('Unable to navigate: mounted=$mounted, currentUser=$currentUser');
         throw Exception('Authentication failed - no current user');
       }
     } catch (e) {
@@ -100,21 +100,21 @@ class _AuthScreenState extends State<AuthScreen> {
   String _getErrorMessage(String error) {
     if (error.contains('operation is not allowed') ||
         error.contains('sign-in provider is disabled')) {
-      return 'Chưa enable Email/Password trong Firebase Console. Vào Authentication > Sign-in method > Enable Email/Password';
+      return 'Email/Password has not been enabled in Firebase Console. Go to Authentication > Sign-in method > Enable Email/Password';
     } else if (error.contains('network-request-failed')) {
-      return 'Lỗi kết nối mạng. Vui lòng kiểm tra internet và thử lại.';
+      return 'Network connection error. Please check your internet and try again.';
     } else if (error.contains('email-already-in-use')) {
-      return 'Email này đã được sử dụng. Vui lòng sử dụng email khác hoặc đăng nhập.';
+      return 'This email is already in use. Please use another email or log in.';
     } else if (error.contains('weak-password')) {
-      return 'Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn.';
+      return 'Password is too weak. Please choose a stronger password.';
     } else if (error.contains('invalid-email')) {
-      return 'Email không hợp lệ.';
+      return 'Invalid email.';
     } else if (error.contains('user-not-found')) {
-      return 'Không tìm thấy tài khoản với email này.';
+      return 'No account found with this email.';
     } else if (error.contains('wrong-password')) {
-      return 'Mật khẩu không chính xác.';
+      return 'Password is incorrect.';
     } else {
-      return 'Đã xảy ra lỗi: $error';
+      return 'An error occurred: $error';
     }
   }
 
@@ -150,7 +150,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 const SizedBox(height: 8),
 
                 Text(
-                  _isLogin ? 'Đăng nhập vào tài khoản' : 'Tạo tài khoản mới',
+                  _isLogin ? 'Log in to account' : 'Create new account',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Colors.grey[600],
@@ -169,10 +169,10 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Vui lòng nhập email';
+                      return 'Please enter email';
                     }
                     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                      return 'Email không hợp lệ';
+                      return 'Invalid email';
                     }
                     return null;
                   },
@@ -184,16 +184,16 @@ class _AuthScreenState extends State<AuthScreen> {
                   TextFormField(
                     controller: _usernameController,
                     decoration: const InputDecoration(
-                      labelText: 'Tên đăng nhập',
+                      labelText: 'Username',
                       prefixIcon: Icon(Icons.person),
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Vui lòng nhập tên đăng nhập';
+                        return 'Please enter username';
                       }
                       if (value.length < 3) {
-                        return 'Tên đăng nhập phải có ít nhất 3 ký tự';
+                        return 'Username must be at least 3 characters';
                       }
                       return null;
                     },
@@ -206,7 +206,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   TextFormField(
                     controller: _fullNameController,
                     decoration: const InputDecoration(
-                      labelText: 'Họ và tên (không bắt buộc)',
+                      labelText: 'Full name (optional)',
                       prefixIcon: Icon(Icons.person_outline),
                       border: OutlineInputBorder(),
                     ),
@@ -219,7 +219,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Mật khẩu',
+                    labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
@@ -229,10 +229,10 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Vui lòng nhập mật khẩu';
+                      return 'Please enter password';
                     }
                     if (!_isLogin && value.length < 6) {
-                      return 'Mật khẩu phải có ít nhất 6 ký tự';
+                      return 'Password must be at least 6 characters';
                     }
                     return null;
                   },
@@ -251,7 +251,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   child: _isLoading
                       ? const CircularProgressIndicator()
                       : Text(
-                    _isLogin ? 'Đăng nhập' : 'Đăng ký',
+                    _isLogin ? 'Login' : 'Register',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -262,8 +262,8 @@ class _AuthScreenState extends State<AuthScreen> {
                   onPressed: () => setState(() => _isLogin = !_isLogin),
                   child: Text(
                     _isLogin
-                        ? 'Chưa có tài khoản? Đăng ký ngay'
-                        : 'Đã có tài khoản? Đăng nhập',
+                        ? 'Do not have an account? Sign up now'
+                        : 'Already have an account? Sign in',
                   ),
                 ),
                 // OutlinedButton(

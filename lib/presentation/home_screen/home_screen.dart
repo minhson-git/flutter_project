@@ -86,11 +86,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _loadCategories(),
       ]);
 
-      print('✅ Loaded Firebase data successfully');
+      print('Loaded Firebase data successfully');
     } catch (e) {
-      print('❌ Error loading Firebase data: $e');
+      print('Error loading Firebase data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi tải dữ liệu: $e')),
+        SnackBar(content: Text('Error loading data: $e')),
       );
     } finally {
       setState(() => _isLoading = false);

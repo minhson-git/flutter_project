@@ -109,7 +109,7 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _performBackgroundTasks() async {
     try {
       // Firebase và dữ liệu mẫu
-      print('Khởi tạo Firebase và dữ liệu...');
+      print('Initialize Firebase and data...');
       await FirebaseService.firestore.enableNetwork();
       // await DataInitService.initializeSampleData();
       // print('Firebase và dữ liệu sẵn sàng');
@@ -188,15 +188,15 @@ class _SplashScreenState extends State<SplashScreen>
     // Check Firebase Auth state
     User? currentUser = AuthService.currentUser;
 
-    print('🔍 SplashScreen - Current User: ${currentUser?.uid}');
-    print('🔍 SplashScreen - Email: ${currentUser?.email}');
+    print('SplashScreen - Current User: ${currentUser?.uid}');
+    print('SplashScreen - Email: ${currentUser?.email}');
 
     String nextRoute;
     if (currentUser != null) {
-      print('User đã đăng nhập, điều hướng đến HomeScreen');
+      print('User is logged in, navigate to HomeScreen');
       nextRoute = AppRoutes.homeScreen;
     } else {
-      print('Chưa đăng nhập, điều hướng đến AuthScreen');
+      print('Not logged in, navigate to AuthScreen');
       nextRoute = AppRoutes.authScreen;
     }
 

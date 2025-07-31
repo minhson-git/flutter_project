@@ -20,7 +20,7 @@ class AuthService {
     String? fullName,
   }) async {
     try {
-      print('🔥 Bắt đầu đăng ký user...');
+      print('Start user registration...');
       
       // Create user account
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
@@ -31,7 +31,7 @@ class AuthService {
 
       // Create user profile in Firestore
       if (userCredential.user != null) {
-        print('📝 Tạo user profile...');
+        print('Create user profiles...');
         try {
           UserModel userModel = UserModel(
             id: userCredential.user!.uid,
@@ -45,20 +45,20 @@ class AuthService {
           await UserService.createUserProfile(userModel);
           print('User profile created');
         } catch (profileError) {
-          print('⚠️ Warning - Could not create user profile: $profileError');
+          print('Warning - Could not create user profile: $profileError');
           // Skip profile creation, return successful auth
           print('Continuing without profile creation');
         }
       }
 
-      print('Đăng ký hoàn tất');
+      print('Registration completed');
       return userCredential;
     } on FirebaseAuthException catch (e) {
       print('Firebase Auth Error: ${e.code} - ${e.message}');
       throw Exception(_handleAuthError(e));
     } catch (e) {
       print('Signup Error: $e');
-      throw Exception('Đã xảy ra lỗi không xác định: $e');
+      throw Exception('An unknown error occurred: $e');
     }
   }
 
@@ -68,12 +68,12 @@ class AuthService {
     required String password,
   }) async {
     try {
-      print('Đang đăng nhập với email: $email');
+      print('Signing in with email: $email');
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      print('Đăng nhập thành công: ${userCredential.user?.uid}');
+      print('Login successful: ${userCredential.user?.uid}');
 
       return userCredential;
     } on FirebaseAuthException catch (e) {
@@ -81,7 +81,7 @@ class AuthService {
       throw Exception(_handleAuthError(e));
     } catch (e) {
       print('Login Error: $e');
-      throw Exception('Đã xảy ra lỗi không xác định: $e');
+      throw Exception('An unknown error occurred: $e');
     }
   }
 
@@ -90,7 +90,7 @@ class AuthService {
     try {
       await _auth.signOut();
     } catch (e) {
-      throw Exception('Không thể đăng xuất: $e');
+      throw Exception('Cannot log out: $e');
     }
   }
 
@@ -101,7 +101,7 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw Exception(_handleAuthError(e));
     } catch (e) {
-      throw Exception('Đã xảy ra lỗi không xác định: $e');
+      throw Exception('An unknown error occurred: $e');
     }
   }
 
@@ -112,12 +112,12 @@ class AuthService {
       if (user != null) {
         await user.updatePassword(newPassword);
       } else {
-        throw Exception('Không tìm thấy người dùng');
+        throw Exception('User not found');
       }
     } on FirebaseAuthException catch (e) {
       throw Exception(_handleAuthError(e));
     } catch (e) {
-      throw Exception('Đã xảy ra lỗi không xác định: $e');
+      throw Exception('An unknown error occurred: $e');
     }
   }
 
@@ -130,12 +130,12 @@ class AuthService {
         // Update email in user profile
         await UserService.updateUserProfile(user.uid as UserModel, {'email': newEmail});
       } else {
-        throw Exception('Không tìm thấy người dùng');
+        throw Exception('User not found');
       }
     } on FirebaseAuthException catch (e) {
       throw Exception(_handleAuthError(e));
     } catch (e) {
-      throw Exception('Đã xảy ra lỗi không xác định: $e');
+      throw Exception('An unknown error occurred: $e');
     }
   }
 
@@ -150,12 +150,12 @@ class AuthService {
         );
         await user.reauthenticateWithCredential(credential);
       } else {
-        throw Exception('Không tìm thấy người dùng');
+        throw Exception('User not found');
       }
     } on FirebaseAuthException catch (e) {
       throw Exception(_handleAuthError(e));
     } catch (e) {
-      throw Exception('Đã xảy ra lỗi không xác định: $e');
+      throw Exception('An unknown error occurred: $e');
     }
   }
 
@@ -170,12 +170,12 @@ class AuthService {
         // Delete user account
         await user.delete();
       } else {
-        throw Exception('Không tìm thấy người dùng');
+        throw Exception('User not found');
       }
     } on FirebaseAuthException catch (e) {
       throw Exception(_handleAuthError(e));
     } catch (e) {
-      throw Exception('Đã xảy ra lỗi không xác định: $e');
+      throw Exception('An unknown error occurred: $e');
     }
   }
 
@@ -189,7 +189,7 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw Exception(_handleAuthError(e));
     } catch (e) {
-      throw Exception('Đã xảy ra lỗi không xác định: $e');
+      throw Exception('An unknown error occurred: $e');
     }
   }
 
@@ -221,27 +221,27 @@ class AuthService {
   static String _handleAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'weak-password':
-        return 'Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn.';
+        return 'Password is too weak. Please choose a stronger password.';
       case 'email-already-in-use':
-        return 'Email này đã được sử dụng. Vui lòng sử dụng email khác.';
+        return 'This email is already in use. Please use another email.';
       case 'invalid-email':
-        return 'Email không hợp lệ.';
+        return 'Invalid email.';
       case 'user-disabled':
-        return 'Tài khoản đã bị vô hiệu hóa.';
+        return 'Account has been disabled.';
       case 'user-not-found':
-        return 'Không tìm thấy tài khoản với email này.';
+        return 'No account found with this email.';
       case 'wrong-password':
-        return 'Mật khẩu không chính xác.';
+        return 'Password is incorrect.';
       case 'too-many-requests':
-        return 'Quá nhiều yêu cầu. Vui lòng thử lại sau.';
+        return 'Too many requests. Please try again later.';
       case 'operation-not-allowed':
-        return 'Thao tác không được cho phép.';
+        return 'Operation not allowed.';
       case 'invalid-credential':
-        return 'Thông tin đăng nhập không hợp lệ.';
+        return 'Invalid login information.';
       case 'requires-recent-login':
-        return 'Thao tác này yêu cầu đăng nhập lại gần đây.';
+        return 'This action requires a recent login.';
       default:
-        return 'Đã xảy ra lỗi: ${e.message}';
+        return 'An error occurred: ${e.message}';
     }
   }
 }

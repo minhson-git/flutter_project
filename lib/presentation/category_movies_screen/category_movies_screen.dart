@@ -406,7 +406,7 @@ class _CategoryMoviesScreenState extends State<CategoryMoviesScreen> {
                       ),
                       SizedBox(width: 3.w),
                       Text(
-                        '${movie.duration} min',
+                        '${movie.duration} minutes',
                         style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
                           color: AppTheme.lightTheme.colorScheme.onSurface
                               .withValues(alpha: 0.7),

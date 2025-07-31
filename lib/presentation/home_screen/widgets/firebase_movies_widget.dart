@@ -65,7 +65,7 @@ class _FirebaseMoviesWidgetState extends State<FirebaseMoviesWidget> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Lỗi tải dữ liệu',
+              'Error loading data',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -77,7 +77,7 @@ class _FirebaseMoviesWidgetState extends State<FirebaseMoviesWidget> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadMovies,
-              child: const Text('Thử lại'),
+              child: const Text('Retry'),
             ),
           ],
         ),
@@ -96,12 +96,12 @@ class _FirebaseMoviesWidgetState extends State<FirebaseMoviesWidget> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Chưa có phim nào',
+              'There are no movies yet',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Hãy thêm một số phim để bắt đầu',
+              'Add some movies to start',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],

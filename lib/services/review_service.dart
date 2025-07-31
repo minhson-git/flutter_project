@@ -28,7 +28,7 @@ class ReviewService {
           .get();
 
       if (existingReview.docs.isNotEmpty) {
-        throw Exception('Bạn đã đánh giá phim này rồi.');
+        throw Exception('You have already rated this movie.');
       }
 
       DocumentReference docRef = await _reviewsCollection.add(review.toFirestore());

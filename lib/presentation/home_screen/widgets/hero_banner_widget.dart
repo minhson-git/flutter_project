@@ -122,7 +122,7 @@ class HeroBannerWidget extends StatelessWidget {
                       ),
                       SizedBox(width: 4.w),
                       Text(
-                        '${movie!.duration} phút',
+                        '${movie!.duration} minutes',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 14.sp,
