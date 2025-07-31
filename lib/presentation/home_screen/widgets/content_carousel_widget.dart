@@ -158,7 +158,7 @@ class ContentCarouselWidget extends StatelessWidget {
                       Text(
                         content["title"] as String? ?? "",
                         style:
-                        AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                            AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                           color: AppTheme.lightTheme.colorScheme.onSurface,
                         ),
                         maxLines: 2,
@@ -169,7 +169,7 @@ class ContentCarouselWidget extends StatelessWidget {
                         Text(
                           content["genre"] as String,
                           style:
-                          AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                              AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                             color: AppTheme.lightTheme.colorScheme.onSurface
                                 .withValues(alpha: 0.7),
                           ),
@@ -224,11 +224,11 @@ class ContentCarouselWidget extends StatelessWidget {
   }
 
   Widget _buildQuickActionTile(
-      BuildContext context, {
-        required String icon,
-        required String title,
-        required VoidCallback onTap,
-      }) {
+    BuildContext context, {
+    required String icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
     return ListTile(
       leading: CustomIconWidget(
         iconName: icon,

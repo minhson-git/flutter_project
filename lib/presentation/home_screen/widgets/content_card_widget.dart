@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
-import './content_card_widget.dart';
-import 'content_carousel_widget.dart';
+import './content_carousel_widget.dart';
 
 class ContentCardWidget extends StatelessWidget {
   final Map<String, dynamic> content;
@@ -18,6 +17,7 @@ class ContentCardWidget extends StatelessWidget {
     required this.onTap,
     this.onLongPress,
   });
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -70,19 +70,16 @@ class ContentCardWidget extends StatelessWidget {
                         ),
                         child: FractionallySizedBox(
                           alignment: Alignment.centerLeft,
-                          widthFactor: (content["progress"] as double).clamp(
-                            0.0,
-                            1.0,
-                          ),
+                          widthFactor:
+                              (content["progress"] as double).clamp(0.0, 1.0),
                           child: Container(
                             decoration: BoxDecoration(
                               color: AppTheme.lightTheme.primaryColor,
                               borderRadius: BorderRadius.only(
                                 bottomLeft: Radius.circular(3.w),
-                                bottomRight:
-                                    content["progress"] >= 1.0
-                                        ? Radius.circular(3.w)
-                                        : Radius.zero,
+                                bottomRight: content["progress"] >= 1.0
+                                    ? Radius.circular(3.w)
+                                    : Radius.zero,
                               ),
                             ),
                           ),
@@ -98,9 +95,7 @@ class ContentCardWidget extends StatelessWidget {
                       right: 1.w,
                       child: Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 1.5.w,
-                          vertical: 0.5.h,
-                        ),
+                            horizontal: 1.5.w, vertical: 0.5.h),
                         decoration: BoxDecoration(
                           color: AppTheme.lightTheme.primaryColor,
                           borderRadius: BorderRadius.circular(1.w),
@@ -125,9 +120,7 @@ class ContentCardWidget extends StatelessWidget {
                       left: 1.w,
                       child: Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 1.5.w,
-                          vertical: 0.5.h,
-                        ),
+                            horizontal: 1.5.w, vertical: 0.5.h),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.7),
                           borderRadius: BorderRadius.circular(1.w),
@@ -208,28 +201,30 @@ class ContentCardWidget extends StatelessWidget {
                     if (content["episode"] != null)
                       Text(
                         content["episode"] as String,
-                        style: AppTheme.lightTheme.textTheme.bodySmall
-                            ?.copyWith(
-                              color: AppTheme.lightTheme.colorScheme.onSurface
-                                  .withValues(alpha: 0.7),
-                            ),
+                        style:
+                            AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                          color: AppTheme.lightTheme.colorScheme.onSurface
+                              .withValues(alpha: 0.7),
+                        ),
                       ),
                   ] else if (carouselType == CarouselType.newReleases) ...[
                     if (content["genre"] != null)
                       Text(
                         content["genre"] as String,
-                        style: AppTheme.lightTheme.textTheme.bodySmall
-                            ?.copyWith(color: AppTheme.lightTheme.primaryColor),
+                        style:
+                            AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                          color: AppTheme.lightTheme.primaryColor,
+                        ),
                       ),
                   ] else ...[
                     if (content["year"] != null && content["genre"] != null)
                       Text(
                         "${content["year"]} • ${content["genre"]}",
-                        style: AppTheme.lightTheme.textTheme.bodySmall
-                            ?.copyWith(
-                              color: AppTheme.lightTheme.colorScheme.onSurface
-                                  .withValues(alpha: 0.7),
-                            ),
+                        style:
+                            AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                          color: AppTheme.lightTheme.colorScheme.onSurface
+                              .withValues(alpha: 0.7),
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

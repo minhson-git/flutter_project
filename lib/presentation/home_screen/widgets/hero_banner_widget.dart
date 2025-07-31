@@ -4,18 +4,20 @@ import 'package:sizer/sizer.dart';
 import '../../../core/app_export.dart';
 
 class HeroBannerWidget extends StatelessWidget {
-  final Map<String, dynamic> heroData;
+  final MovieModel? movie;
   final VoidCallback? onWatchNowTap;
 
   const HeroBannerWidget({
     super.key,
-    required this.heroData,
+    this.movie,
     this.onWatchNowTap,
   });
 
+
+
   @override
   Widget build(BuildContext context) {
-    if (heroData.isEmpty) {
+    if (movie == null) {
       return const SizedBox.shrink();
     }
 
@@ -40,7 +42,7 @@ class HeroBannerWidget extends StatelessWidget {
           children: [
             // Background Image
             CustomImageWidget(
-              imageUrl: heroData["imageUrl"] as String? ?? "",
+              imageUrl: movie!.backdropUrl ?? movie!.posterUrl ?? "",
               width: double.infinity,
               height: 25.h,
               fit: BoxFit.cover,
@@ -73,7 +75,7 @@ class HeroBannerWidget extends StatelessWidget {
                 children: [
                   // Title
                   Text(
-                    heroData["title"] as String? ?? "",
+                    movie!.title,
                     style:
                         AppTheme.lightTheme.textTheme.headlineSmall?.copyWith(
                       color: Colors.white,
@@ -92,12 +94,49 @@ class HeroBannerWidget extends StatelessWidget {
 
                   SizedBox(height: 1.h),
 
-                  // Subtitle
-                  if (heroData["subtitle"] != null)
-                    Text(
-                      heroData["subtitle"] as String,
-                      style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
+                  // Movie Info
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.star,
+                        color: Colors.amber,
+                        size: 16,
+                      ),
+                      SizedBox(width: 1.w),
+                      Text(
+                        movie!.rating.toStringAsFixed(1),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        movie!.releaseYear.toString(),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        '${movie!.duration} phút',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 1.h),
+
+                  // Description
+                  Text(
+                    movie!.description,
+                    style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
                         shadows: [
                           Shadow(
                             color: Colors.black.withValues(alpha: 0.5),
@@ -182,7 +221,7 @@ class HeroBannerWidget extends StatelessWidget {
             ),
 
             // Rating Badge
-            if (heroData["rating"] != null)
+            if (movie?.rating != null)
               Positioned(
                 top: 2.h,
                 right: 4.w,
@@ -203,7 +242,7 @@ class HeroBannerWidget extends StatelessWidget {
                       ),
                       SizedBox(width: 1.w),
                       Text(
-                        heroData["rating"].toString(),
+                        movie!.rating.toStringAsFixed(1),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 10.sp,
