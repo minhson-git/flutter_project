@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_project/presentation/categories_screen/categories_screen.dart';
+import '../presentation/auth_screen/auth_screen.dart';
 import '../presentation/home_screen/home_screen.dart';
+import '../presentation/splash_screen/splash_screen.dart';
 
 class AppRoutes {
   // TODO: Add your routes here
@@ -15,6 +18,7 @@ class AppRoutes {
     initial: (context) => const SplashScreen(),
     authScreen: (context) => const AuthScreen(),
     homeScreen: (context) => const HomeScreen(),
+    categoriesScreen: (context) => const CategoriesScreen(),
     searchScreen: (context) => const SearchScreen(),
     contentDetailScreen: (context) => const ContentDetailScreen(),
     profileScreen: (context) => const ProfileScreen(),
