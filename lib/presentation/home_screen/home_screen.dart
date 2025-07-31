@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../models/category_model.dart';
+import '../../models/movie_model.dart';
+import '../../models/user_model.dart';
+import '../../models/watch_history_model.dart';
+import '../../services/auth_service.dart';
 import '../../services/category_service.dart';
 import '../../services/movie_service.dart';
+import '../../services/user_service.dart';
 import './widgets/content_carousel_widget.dart';
 import './widgets/hero_banner_widget.dart';
 import './widgets/home_header_widget.dart';
