@@ -3,6 +3,10 @@ import 'package:sizer/sizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/app_export.dart';
+import '../../models/category_model.dart';
+import '../../models/movie_model.dart';
+import '../../services/category_service.dart';
+import '../../services/movie_service.dart';
 import './widgets/empty_state_widget.dart';
 import './widgets/filter_chips_widget.dart';
 import './widgets/recent_searches_widget.dart';
@@ -40,8 +44,8 @@ class _SearchScreenState extends State<SearchScreen> {
   List<String> _searchSuggestions = [];
 
   final List<String> _filterOptions = [
-    'Movie',
-    'Shows',
+    'Phim lẻ',
+    'Phim bộ',
     'Action',
     'Adventure',
     'Comedy',
@@ -62,7 +66,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _loadInitialData();
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocusNode.requestFocus();
     });
@@ -72,7 +76,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _searchQuery = _searchController.text;
         _isSearching = _searchQuery.isNotEmpty;
       });
-      
+
       // Generate suggestions based on query
       if (_searchQuery.length >= 2) {
         _generateSearchSuggestions();
@@ -92,10 +96,10 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         _isSearching = true;
       });
-      
+
       // Add to recent searches
       _addToRecentSearches(query.trim());
-      
+
       _searchFocusNode.unfocus();
       _performSearch(query);
     }
@@ -115,7 +119,7 @@ class _SearchScreenState extends State<SearchScreen> {
       // Load popular genres and recent movies as trending searches
       final categories = await CategoryService.getAllCategories();
       final popularMovies = await MovieService.getPopularMovies();
-      
+
       setState(() {
         _trendingSearches = [
           ...categories.take(6).map((cat) => cat.name),
@@ -128,7 +132,7 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         _trendingSearches = [
           'Action',
-          'Comedy', 
+          'Comedy',
           'Drama',
           'Horror',
           'Sci-Fi',
@@ -142,11 +146,11 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final recentSearches = prefs.getStringList(_recentSearchesKey) ?? [];
-      
+
       setState(() {
         _recentSearches = recentSearches;
       });
-      
+
       print('📜 Loaded ${_recentSearches.length} recent searches');
     } catch (e) {
       print('❌ Error loading recent searches: $e');
@@ -168,7 +172,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _addToRecentSearches(String query) async {
     if (query.trim().isEmpty) return;
-    
+
     setState(() {
       // Remove if already exists
       _recentSearches.remove(query);
@@ -179,7 +183,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _recentSearches = _recentSearches.take(_maxRecentSearches).toList();
       }
     });
-    
+
     // Save to persistent storage
     await _saveRecentSearches();
   }
@@ -211,14 +215,14 @@ class _SearchScreenState extends State<SearchScreen> {
 
     try {
       print('🔍 Searching for: $query');
-      
+
       // Search movies
       List<MovieModel> allResults = await MovieService.searchMovies(query);
-      
+
       // Also search by genre if query matches
       final categories = await CategoryService.getAllCategories();
       final matchingCategory = categories.firstWhere(
-        (cat) => cat.name.toLowerCase().contains(query.toLowerCase()),
+            (cat) => cat.name.toLowerCase().contains(query.toLowerCase()),
         orElse: () => CategoryModel(
           name: '',
           description: '',
@@ -226,29 +230,29 @@ class _SearchScreenState extends State<SearchScreen> {
           updatedAt: DateTime.now(),
         ),
       );
-      
+
       if (matchingCategory.id?.isNotEmpty == true) {
         final genreMovies = await MovieService.getMoviesByGenre(matchingCategory.name);
         allResults.addAll(genreMovies);
       }
-      
+
       // Remove duplicates
       final uniqueResults = <String, MovieModel>{};
       for (var movie in allResults) {
         uniqueResults[movie.id.toString()] = movie;
       }
-      
+
       // Apply filters
       List<MovieModel> filteredResults = uniqueResults.values.toList();
       filteredResults = _applyFilters(filteredResults);
-      
+
       setState(() {
         _searchResults = filteredResults;
         _isLoading = false;
       });
-      
+
       print('✅ Found ${_searchResults.length} results');
-      
+
     } catch (e) {
       print('❌ Search error: $e');
       setState(() {
@@ -260,20 +264,20 @@ class _SearchScreenState extends State<SearchScreen> {
 
   List<MovieModel> _applyFilters(List<MovieModel> movies) {
     List<MovieModel> filtered = List.from(movies);
-    
+
     for (String filter in _selectedFilters) {
       switch (filter) {
         case 'Phim lẻ':
-          // Filter for movies (single films)
-          filtered = filtered.where((movie) => 
-            !movie.genres.contains('Series') && 
-            !movie.title.toLowerCase().contains('season')).toList();
+        // Filter for movies (single films)
+          filtered = filtered.where((movie) =>
+          !movie.genres.contains('Series') &&
+              !movie.title.toLowerCase().contains('season')).toList();
           break;
         case 'Phim bộ':
-          // Filter for series
-          filtered = filtered.where((movie) => 
-            movie.genres.contains('Series') || 
-            movie.title.toLowerCase().contains('season')).toList();
+        // Filter for series
+          filtered = filtered.where((movie) =>
+          movie.genres.contains('Series') ||
+              movie.title.toLowerCase().contains('season')).toList();
           break;
         case '2024':
         case '2023':
@@ -289,13 +293,13 @@ class _SearchScreenState extends State<SearchScreen> {
           filtered = filtered.where((movie) => movie.quality?.contains('4K') == true).toList();
           break;
         default:
-          // Genre filters
-          filtered = filtered.where((movie) => 
-            movie.genres.any((genre) => 
-              genre.toLowerCase().contains(filter.toLowerCase()))).toList();
+        // Genre filters
+          filtered = filtered.where((movie) =>
+              movie.genres.any((genre) =>
+                  genre.toLowerCase().contains(filter.toLowerCase()))).toList();
       }
     }
-    
+
     return filtered;
   }
 
@@ -321,7 +325,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _selectedFilters.add(filter);
       }
     });
-    
+
     // Re-apply filters to current results
     if (_isSearching && _searchQuery.isNotEmpty) {
       _performSearch(_searchQuery);
@@ -342,7 +346,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (result is MovieModel) {
       print('🔍 Navigating to movie: ${result.title}');
       print('Movie ID: ${result.id}');
-      
+
       // Validate movie data before navigation
       if (result.title.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -350,7 +354,7 @@ class _SearchScreenState extends State<SearchScreen> {
         );
         return;
       }
-      
+
       Navigator.push(
         context,
         MaterialPageRoute(

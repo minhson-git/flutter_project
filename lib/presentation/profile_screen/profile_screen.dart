@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
-import '../../core/app_export.dart';
-import './edit_profile_screen.dart';
+import '../../../core/app_export.dart';
+import '../../models/movie_model.dart';
+import '../../models/playlist_model.dart';
+import '../../models/user_model.dart';
+import '../../models/watch_history_model.dart';
+import '../../services/auth_service.dart';
+import '../../services/movie_service.dart';
+import '../../services/playlist_service.dart';
+import '../../services/user_service.dart';
+import '../../services/watch_history_service.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});

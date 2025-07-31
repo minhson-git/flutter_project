@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../../../core/app_export.dart';
+import '../../../models/movie_model.dart';
 
 class SearchResultsWidget extends StatelessWidget {
   final List<dynamic> results; // Can be MovieModel or Map
@@ -135,7 +136,7 @@ class SearchResultsWidget extends StatelessWidget {
 
   Widget _buildThumbnail(dynamic result) {
     String? imageUrl;
-    
+
     if (result is MovieModel) {
       imageUrl = result.posterUrl;
     } else if (result is Map<String, dynamic>) {
@@ -168,7 +169,7 @@ class SearchResultsWidget extends StatelessWidget {
     }
   }
 
-  String? _getTitle(dynamic result) {
+  String _getTitle(dynamic result) {
     if (result is MovieModel) {
       return result.title;
     } else if (result is Map<String, dynamic>) {
@@ -195,7 +196,7 @@ class SearchResultsWidget extends StatelessWidget {
     return '0.0';
   }
 
-  String? _getDescription(dynamic result) {
+  String _getDescription(dynamic result) {
     if (result is MovieModel) {
       return result.description;
     } else if (result is Map<String, dynamic>) {
@@ -212,18 +213,4 @@ class SearchResultsWidget extends StatelessWidget {
     }
     return 'Unknown';
   }
-}
-
-class MovieModel {
-  String? get title => null;
-
-  get releaseYear => null;
-
-  get rating => null;
-
-  String? get description => null;
-
-  get genres => null;
-
-  String? get posterUrl => null;
 }
