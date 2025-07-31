@@ -128,7 +128,7 @@ class AuthService {
       if (user != null) {
         await user.updateEmail(newEmail);
         // Update email in user profile
-        await UserService.updateUserProfile(user.uid, {'email': newEmail});
+        await UserService.updateUserProfile(user.uid as UserModel, {'email': newEmail});
       } else {
         throw Exception('Không tìm thấy người dùng');
       }
