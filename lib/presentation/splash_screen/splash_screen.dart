@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/app_export.dart';
 import '../../services/auth_service.dart';
+import '../../services/data_init_service.dart';
 import '../../services/firebase_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -111,7 +112,7 @@ class _SplashScreenState extends State<SplashScreen>
       // Firebase và dữ liệu mẫu
       print('Initialize Firebase and data...');
       await FirebaseService.firestore.enableNetwork();
-      // await DataInitService.initializeSampleData();
+      await DataInitService.initializeSampleData();
       // print('Firebase và dữ liệu sẵn sàng');
 
       // Simulate background tasks with timeout

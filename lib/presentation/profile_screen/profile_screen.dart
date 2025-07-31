@@ -66,7 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       print('❌ Error loading user data: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tải dữ liệu: $e')),
+          SnackBar(content: Text('Error loading data: $e')),
         );
       }
     } finally {
@@ -98,7 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
     } catch (e) {
-      print('❌ Error loading movies for watch history: $e');
+      print('Error loading movies for watch history: $e');
     }
   }
 
@@ -126,7 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       Navigator.pushReplacementNamed(context, AppRoutes.authScreen);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi đăng xuất: $e')),
+        SnackBar(content: Text('Logout error: $e')),
       );
     }
   }
@@ -140,30 +140,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Tạo playlist mới'),
+          title: const Text('Create new playlist'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Tên playlist *',
-                  hintText: 'Nhập tên playlist',
+                  labelText: 'Playlist Name *',
+                  hintText: 'Enter playlist name',
                 ),
               ),
               SizedBox(height: 2.h),
               TextField(
                 controller: descriptionController,
                 decoration: const InputDecoration(
-                  labelText: 'Mô tả',
-                  hintText: 'Mô tả ngắn về playlist (tùy chọn)',
+                  labelText: 'Description',
+                  hintText: 'Short description of playlist (optional)',
                 ),
                 maxLines: 2,
               ),
               SizedBox(height: 1.h),
               CheckboxListTile(
-                title: const Text('Công khai'),
-                subtitle: const Text('Cho phép người khác xem playlist này'),
+                title: const Text('Publish'),
+                subtitle: const Text('Allow others to view this playlist'),
                 value: isPublic,
                 onChanged: (value) {
                   setDialogState(() {
@@ -176,13 +176,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Hủy'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () async {
                 if (nameController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Vui lòng nhập tên playlist')),
+                    const SnackBar(content: Text('Please enter playlist name')),
                   );
                   return;
                 }
@@ -193,7 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 backgroundColor: AppTheme.lightTheme.primaryColor,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Tạo'),
+              child: const Text('Create'),
             ),
           ],
         ),
@@ -220,7 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Tạo playlist thành công!'),
+            content: Text('Create playlist successfully!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -229,7 +229,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi tạo playlist: $e'),
+            content: Text('Playlist creation error: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -242,7 +242,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       case 'view':
         // TODO: Navigate to playlist detail screen
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Xem playlist: ${playlist.name}')),
+          SnackBar(content: Text('View playlist: ${playlist.name}')),
         );
         break;
       case 'edit':
@@ -251,7 +251,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       case 'share':
         // TODO: Implement share functionality
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Chia sẻ playlist: ${playlist.name}')),
+          SnackBar(content: Text('Share playlist: ${playlist.name}')),
         );
         break;
       case 'delete':
@@ -269,27 +269,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Chỉnh sửa playlist'),
+          title: const Text('Edit playlist'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Tên playlist *',
+                  labelText: 'Playlist Name *',
                 ),
               ),
               SizedBox(height: 2.h),
               TextField(
                 controller: descriptionController,
                 decoration: const InputDecoration(
-                  labelText: 'Mô tả',
+                  labelText: 'Description',
                 ),
                 maxLines: 2,
               ),
               SizedBox(height: 1.h),
               CheckboxListTile(
-                title: const Text('Công khai'),
+                title: const Text('Publish'),
                 value: isPublic,
                 onChanged: (value) {
                   setDialogState(() {
@@ -302,13 +302,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Hủy'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () async {
                 if (nameController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Vui lòng nhập tên playlist')),
+                    const SnackBar(content: Text('Please enter playlist name')),
                   );
                   return;
                 }
@@ -319,7 +319,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 backgroundColor: AppTheme.lightTheme.primaryColor,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Cập nhật'),
+              child: const Text('Update'),
             ),
           ],
         ),
@@ -342,7 +342,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Cập nhật playlist thành công!'),
+            content: Text('Playlist updated successfully!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -351,7 +351,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi cập nhật playlist: $e'),
+            content: Text('Playlist update error: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -363,12 +363,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xóa playlist'),
-        content: Text('Bạn có chắc chắn muốn xóa playlist "${playlist.name}"?\nHành động này không thể hoàn tác.'),
+        title: const Text('Delete playlist'),
+        content: Text('Are you sure you want to delete playlist "${playlist.name}"?\nThis action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -379,7 +379,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Xóa'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -394,7 +394,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Xóa playlist thành công!'),
+            content: Text('Playlist deleted successfully!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -403,7 +403,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi xóa playlist: $e'),
+            content: Text('Playlist deletion error: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -428,9 +428,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Đã xóa "${movie.title}" khỏi danh sách yêu thích'),
+            content: Text('Removed "${movie.title}" from favorites list'),
             action: SnackBarAction(
-              label: 'Hoàn tác',
+              label: 'Undo',
               onPressed: () => _addToFavorites(movie),
             ),
           ),
@@ -440,7 +440,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi xóa khỏi yêu thích: $e'),
+            content: Text('Error removing from favorites: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -465,7 +465,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Đã thêm "${movie.title}" vào danh sách yêu thích'),
+            content: Text('Added "${movie.title}" to favorites'),
             backgroundColor: Colors.green,
           ),
         );
@@ -474,7 +474,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi thêm vào yêu thích: $e'),
+            content: Text('Error adding to favorites: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -506,7 +506,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         body: const Center(
           child: Text(
-            'Không tìm thấy thông tin user',
+            'User information not found',
             style: TextStyle(color: Colors.white),
           ),
         ),
@@ -536,7 +536,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 IconButton(
                   onPressed: _signOut,
                   icon: const Icon(Icons.logout),
-                  tooltip: 'Đăng xuất',
+                  tooltip: 'Log out',
                 ),
               ],
             ),
@@ -650,7 +650,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ElevatedButton.icon(
                 onPressed: _navigateToEditProfile,
                 icon: const Icon(Icons.edit, size: 18),
-                label: const Text('Chỉnh sửa profile'),
+                label: const Text('Edit profile'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white.withValues(alpha: 0.1),
                   foregroundColor: Colors.white,
@@ -767,7 +767,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: _buildStatCard(
                 icon: Icons.favorite,
-                title: 'Yêu thích',
+                title: 'Favourites',
                 value: _currentUser!.favoriteMovies.length.toString(),
                 gradient: const LinearGradient(colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)]),
               ),
@@ -790,7 +790,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: _buildStatCard(
                 icon: Icons.history,
-                title: 'Đã xem',
+                title: 'Viewed',
                 value: _watchHistory.length.toString(),
                 gradient: const LinearGradient(colors: [Color(0xFF667eea), Color(0xFF764ba2)]),
               ),
@@ -799,7 +799,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: _buildStatCard(
                 icon: Icons.access_time,
-                title: 'Thời gian',
+                title: 'Time',
                 value: watchTimeText,
                 gradient: const LinearGradient(colors: [Color(0xFFf093fb), Color(0xFFf5576c)]),
               ),
@@ -862,7 +862,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Phim yêu thích',
+              'Favorite Movies',
               style: TextStyle(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
@@ -875,7 +875,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // TODO: Navigate to all favorites
                 },
                 child: Text(
-                  'Xem tất cả',
+                  'View All',
                   style: TextStyle(color: const Color(0xFFE50914)),
                 ),
               ),
@@ -900,7 +900,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    'Chưa có phim yêu thích nào',
+                    'No favorite movies yet',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 16.sp,
@@ -1052,7 +1052,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Playlists của tôi',
+              'My Playlists',
               style: TextStyle(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
@@ -1065,7 +1065,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
               icon: const Icon(Icons.add, color: Color(0xFFE50914)),
               label: Text(
-                'Tạo mới',
+                'Create new',
                 style: TextStyle(color: const Color(0xFFE50914)),
               ),
             ),
@@ -1090,7 +1090,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    'Chưa có playlist nào',
+                    'No playlist yet',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 16.sp,
@@ -1100,7 +1100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ElevatedButton.icon(
                     onPressed: _showCreatePlaylistDialog,
                     icon: const Icon(Icons.add),
-                    label: const Text('Tạo playlist đầu tiên'),
+                    label: const Text('Create your first playlist'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFE50914),
                       foregroundColor: Colors.white,
@@ -1172,7 +1172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              'Công khai',
+                              'Publish',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 10.sp,
@@ -1187,7 +1187,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         SizedBox(height: 0.5.h),
                         Text(
-                          '${playlist.movieCount} phim • $durationText',
+                          '${playlist.movieCount} movie • $durationText',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.7),
                             fontSize: 14.sp,
@@ -1208,7 +1208,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         SizedBox(height: 0.5.h),
                         Text(
-                          'Cập nhật ${_getTimeAgo(playlist.updatedAt)}',
+                          'Update ${_getTimeAgo(playlist.updatedAt)}',
                           style: TextStyle(
                             fontSize: 11.sp,
                             color: Colors.white.withValues(alpha: 0.5),
@@ -1228,7 +1228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           value: 'view',
                           child: ListTile(
                             leading: const Icon(Icons.visibility, color: Colors.white),
-                            title: const Text('Xem playlist', style: TextStyle(color: Colors.white)),
+                            title: const Text('View playlist', style: TextStyle(color: Colors.white)),
                             contentPadding: EdgeInsets.zero,
                           ),
                         ),
@@ -1237,7 +1237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             value: 'edit',
                             child: ListTile(
                               leading: const Icon(Icons.edit, color: Colors.white),
-                              title: const Text('Chỉnh sửa', style: TextStyle(color: Colors.white)),
+                              title: const Text('Edit', style: TextStyle(color: Colors.white)),
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),
@@ -1245,7 +1245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           value: 'share',
                           child: ListTile(
                             leading: const Icon(Icons.share, color: Colors.white),
-                            title: const Text('Chia sẻ', style: TextStyle(color: Colors.white)),
+                            title: const Text('Share', style: TextStyle(color: Colors.white)),
                             contentPadding: EdgeInsets.zero,
                           ),
                         ),
@@ -1254,7 +1254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             value: 'delete',
                             child: ListTile(
                               leading: const Icon(Icons.delete, color: Colors.red),
-                              title: const Text('Xóa', style: TextStyle(color: Colors.red)),
+                              title: const Text('Delete', style: TextStyle(color: Colors.red)),
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),
@@ -1282,7 +1282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Xem gần đây',
+              'Recently Viewed',
               style: TextStyle(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
@@ -1295,7 +1295,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // TODO: Navigate to full watch history
                 },
                 child: Text(
-                  'Xem tất cả',
+                  'View all',
                   style: TextStyle(color: const Color(0xFFE50914)),
                 ),
               ),
@@ -1304,6 +1304,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         recentHistory.isEmpty
           ? Container(
               padding: EdgeInsets.all(6.w),
+              width: 450,
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A1A),
                 borderRadius: BorderRadius.circular(16),
@@ -1318,7 +1319,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    'Chưa có lịch sử xem nào',
+                    'No viewing history yet',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 16.sp,
@@ -1387,7 +1388,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     title: Text(
-                      movie?.title ?? 'Phim không tìm thấy',
+                      movie?.title ?? 'Movie not found',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 16.sp,
@@ -1401,7 +1402,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         SizedBox(height: 0.5.h),
                         Text(
-                          'Xem $watchMinutes phút • $progressPercentage%',
+                          'Watch $watchMinutes minutes • $progressPercentage%',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.7),
                             fontSize: 14.sp,
@@ -1428,7 +1429,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              'Hoàn thành',
+                              'Completed',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 10.sp,
@@ -1473,13 +1474,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final difference = now.difference(dateTime);
 
     if (difference.inDays > 0) {
-      return '${difference.inDays} ngày trước';
+      return '${difference.inDays} the day before';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} giờ trước';
+      return '${difference.inHours} hour ago';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} phút trước';
+      return '${difference.inMinutes} minutes ago';
     } else {
-      return 'Vừa xong';
+      return 'Just finished';
     }
   }
 
@@ -1488,7 +1489,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '⚙️ Cài đặt',
+          'Setting',
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.bold,
@@ -1506,13 +1507,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _buildSettingsTile(
                 icon: Icons.person,
-                title: 'Chỉnh sửa thông tin',
+                title: 'Edit information',
                 onTap: _navigateToEditProfile,
               ),
               _buildDivider(),
               _buildSettingsTile(
                 icon: Icons.notifications,
-                title: 'Thông báo',
+                title: 'Notification',
                 onTap: () {
                   // TODO: Navigate to notifications settings
                 },
@@ -1520,7 +1521,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildDivider(),
               _buildSettingsTile(
                 icon: Icons.security,
-                title: 'Bảo mật',
+                title: 'Security',
                 onTap: () {
                   // TODO: Navigate to security settings
                 },
@@ -1528,7 +1529,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildDivider(),
               _buildSettingsTile(
                 icon: Icons.help,
-                title: 'Trợ giúp',
+                title: 'Help',
                 onTap: () {
                   // TODO: Navigate to help
                 },
@@ -1536,7 +1537,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildDivider(),
               _buildSettingsTile(
                 icon: Icons.logout,
-                title: 'Đăng xuất',
+                title: 'Log out',
                 onTap: _signOut,
                 isDestructive: true,
               ),

@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/category_model.dart';
 import 'firebase_service.dart';
@@ -67,86 +66,106 @@ class CategoryService {
   }
 
   // Create default categories if they don't exist
-  // static Future<void> createDefaultCategories() async {
-  //   try {
-  //     print('📂 Bắt đầu tạo default categories...');
-  //
-  //     List<Map<String, dynamic>> defaultCategories = [
-  //       {
-  //         'name': 'Hành động',
-  //         'description': 'Phim hành động và phiêu lưu',
-  //         'sortOrder': 1,
-  //       },
-  //       {
-  //         'name': 'Hài kịch',
-  //         'description': 'Phim hài và giải trí',
-  //         'sortOrder': 2,
-  //       },
-  //       {
-  //         'name': 'Kinh dị',
-  //         'description': 'Phim kinh dị và rùng rợn',
-  //         'sortOrder': 3,
-  //       },
-  //       {
-  //         'name': 'Lãng mạn',
-  //         'description': 'Phim lãng mạn và tình cảm',
-  //         'sortOrder': 4,
-  //       },
-  //       {
-  //         'name': 'Khoa học viễn tưởng',
-  //         'description': 'Phim khoa học viễn tưởng',
-  //         'sortOrder': 5,
-  //       },
-  //       {
-  //         'name': 'Tài liệu',
-  //         'description': 'Phim tài liệu và giáo dục',
-  //         'sortOrder': 6,
-  //       },
-  //       {
-  //         'name': 'Hoạt hình',
-  //         'description': 'Phim hoạt hình và anime',
-  //         'sortOrder': 7,
-  //       },
-  //       {
-  //         'name': 'Thể thao',
-  //         'description': 'Phim thể thao và thi đấu',
-  //         'sortOrder': 8,
-  //       },
-  //     ];
-  //
-  //     for (Map<String, dynamic> categoryData in defaultCategories) {
-  //       try {
-  //         print('Kiểm tra category: ${categoryData['name']}');
-  //         // Check if category already exists
-  //         CategoryModel? existingCategory = await getCategoryByName(categoryData['name']);
-  //
-  //         if (existingCategory == null) {
-  //           print('➕ Tạo category mới: ${categoryData['name']}');
-  //           CategoryModel category = CategoryModel(
-  //             name: categoryData['name'],
-  //             description: categoryData['description'],
-  //             sortOrder: categoryData['sortOrder'],
-  //             createdAt: DateTime.now(),
-  //             updatedAt: DateTime.now(),
-  //           );
-  //
-  //           await _categoriesCollection.add(category.toFirestore());
-  //           print('✅ Category created: ${categoryData['name']}');
-  //         } else {
-  //           print('📱 Category đã tồn tại: ${categoryData['name']}');
-  //         }
-  //       } catch (e) {
-  //         print('❌ Lỗi tạo category ${categoryData['name']}: $e');
-  //         throw e;
-  //       }
-  //     }
-  //
-  //     print('✅ Hoàn thành tạo default categories');
-  //   } catch (e) {
-  //     print('❌ Lỗi createDefaultCategories: $e');
-  //     throw Exception(FirebaseService.handleFirestoreError(e));
-  //   }
-  // }
+  static Future<void> createDefaultCategories() async {
+    try {
+      print('Start creating default categories...');
+
+      List<Map<String, dynamic>> defaultCategories = [
+        {
+          'name': 'Action',
+          'description': 'Action and adventure movies',
+          'sortOrder': 1,
+        },
+        {
+          'name': 'Comedy',
+          'description': 'Comedy and entertainment movies',
+          'sortOrder': 2,
+        },
+        {
+          'name': 'Horror',
+          'description': 'Horror and thriller movies',
+          'sortOrder': 3,
+        },
+        {
+          'name': 'Romance',
+          'description': 'Romance and drama movies',
+          'sortOrder': 4,
+        },
+        {
+          'name': 'Sci-Fi',
+          'description': 'Science fiction movies',
+          'sortOrder': 5,
+        },
+        {
+          'name': 'Documentary',
+          'description': 'Documentary and educational movies',
+          'sortOrder': 6,
+        },
+        {
+          'name': 'Animation',
+          'description': 'Animation and anime movies',
+          'sortOrder': 7,
+        },
+        {
+          'name': 'Sports',
+          'description': 'Sports and competition movies',
+          'sortOrder': 8,
+        },
+        {
+          'name': 'Drama',
+          'description': 'Drama and emotional movies',
+          'sortOrder': 9,
+        },
+        {
+          'name': 'Thriller',
+          'description': 'Thriller and suspense movies',
+          'sortOrder': 10,
+        },
+        {
+          'name': 'Fantasy',
+          'description': 'Fantasy and magical movies',
+          'sortOrder': 11,
+        },
+        {
+          'name': 'Crime',
+          'description': 'Crime and mystery movies',
+          'sortOrder': 12,
+        },
+      ];
+
+      for (Map<String, dynamic> categoryData in defaultCategories) {
+        try {
+          print('Check category: ${categoryData['name']}');
+          // Check if category already exists
+          CategoryModel? existingCategory = await getCategoryByName(categoryData['name']);
+
+          if (existingCategory == null) {
+            print('Create new category: ${categoryData['name']}');
+            CategoryModel category = CategoryModel(
+              name: categoryData['name'],
+              description: categoryData['description'],
+              sortOrder: categoryData['sortOrder'],
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            );
+
+            await _categoriesCollection.add(category.toFirestore());
+            print('Category created: ${categoryData['name']}');
+          } else {
+            print('Category already exists: ${categoryData['name']}');
+          }
+        } catch (e) {
+          print('Error creating category ${categoryData['name']}: $e');
+          throw e;
+        }
+      }
+
+      print('Complete creating default categories');
+    } catch (e) {
+      print('Error creating Default Categories: $e');
+      throw Exception(FirebaseService.handleFirestoreError(e));
+    }
+  }
 
   // Add new category
   static Future<String> addCategory(CategoryModel category) async {
