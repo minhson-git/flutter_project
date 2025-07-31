@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
-
 import '../../../core/app_export.dart';
 
 class SearchResultsWidget extends StatelessWidget {
-  final List<Map<String, dynamic>> results;
-  final Function(Map<String, dynamic>) onResultTap;
+  final List<dynamic> results; // Can be MovieModel or Map
+  final Function(dynamic) onResultTap;
 
   const SearchResultsWidget({
     super.key,
@@ -38,12 +37,7 @@ class SearchResultsWidget extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: CustomImageWidget(
-                    imageUrl: result['thumbnail'] as String,
-                    width: 20.w,
-                    height: 12.h,
-                    fit: BoxFit.cover,
-                  ),
+                  child: _buildThumbnail(result),
                 ),
                 SizedBox(width: 3.w),
                 Expanded(
@@ -51,9 +45,9 @@ class SearchResultsWidget extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        result['title'] as String,
+                        _getTitle(result),
                         style:
-                        AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                            AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                         maxLines: 2,
@@ -63,7 +57,7 @@ class SearchResultsWidget extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            result['year'] as String,
+                            _getYear(result),
                             style: AppTheme.lightTheme.textTheme.bodySmall
                                 ?.copyWith(
                               color: AppTheme.lightTheme.colorScheme.onSurface
@@ -84,7 +78,7 @@ class SearchResultsWidget extends StatelessWidget {
                           ),
                           SizedBox(width: 1.w),
                           Text(
-                            result['rating'] as String,
+                            _getRating(result),
                             style: AppTheme.lightTheme.textTheme.bodySmall
                                 ?.copyWith(
                               color: AppTheme.lightTheme.colorScheme.onSurface
@@ -95,9 +89,9 @@ class SearchResultsWidget extends StatelessWidget {
                       ),
                       SizedBox(height: 1.h),
                       Text(
-                        result['description'] as String,
+                        _getDescription(result),
                         style:
-                        AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                            AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                           color: AppTheme.lightTheme.colorScheme.onSurface
                               .withValues(alpha: 0.8),
                         ),
@@ -116,7 +110,7 @@ class SearchResultsWidget extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          result['genre'] as String,
+                          _getGenre(result),
                           style: AppTheme.lightTheme.textTheme.labelSmall
                               ?.copyWith(
                             color: AppTheme.lightTheme.colorScheme.primary,
@@ -138,4 +132,98 @@ class SearchResultsWidget extends StatelessWidget {
       },
     );
   }
+
+  Widget _buildThumbnail(dynamic result) {
+    String? imageUrl;
+    
+    if (result is MovieModel) {
+      imageUrl = result.posterUrl;
+    } else if (result is Map<String, dynamic>) {
+      imageUrl = result['thumbnail'] as String?;
+    }
+
+    if (imageUrl?.isNotEmpty == true) {
+      return CustomImageWidget(
+        imageUrl: imageUrl!,
+        width: 20.w,
+        height: 12.h,
+        fit: BoxFit.cover,
+      );
+    } else {
+      return Container(
+        width: 20.w,
+        height: 12.h,
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Center(
+          child: Icon(
+            Icons.movie,
+            size: 30,
+            color: Colors.grey,
+          ),
+        ),
+      );
+    }
+  }
+
+  String? _getTitle(dynamic result) {
+    if (result is MovieModel) {
+      return result.title;
+    } else if (result is Map<String, dynamic>) {
+      return result['title'] as String;
+    }
+    return 'Unknown Title';
+  }
+
+  String _getYear(dynamic result) {
+    if (result is MovieModel) {
+      return result.releaseYear.toString();
+    } else if (result is Map<String, dynamic>) {
+      return result['year'] as String;
+    }
+    return 'Unknown';
+  }
+
+  String _getRating(dynamic result) {
+    if (result is MovieModel) {
+      return result.rating.toStringAsFixed(1);
+    } else if (result is Map<String, dynamic>) {
+      return result['rating'] as String;
+    }
+    return '0.0';
+  }
+
+  String? _getDescription(dynamic result) {
+    if (result is MovieModel) {
+      return result.description;
+    } else if (result is Map<String, dynamic>) {
+      return result['description'] as String;
+    }
+    return 'No description available';
+  }
+
+  String _getGenre(dynamic result) {
+    if (result is MovieModel) {
+      return result.genres.isNotEmpty ? result.genres.join(', ') : 'Unknown';
+    } else if (result is Map<String, dynamic>) {
+      return result['genre'] as String;
+    }
+    return 'Unknown';
+  }
+}
+
+class MovieModel {
+  String? get title => null;
+
+  get releaseYear => null;
+
+  get rating => null;
+
+  String? get description => null;
+
+  get genres => null;
+
+  String? get posterUrl => null;
 }
