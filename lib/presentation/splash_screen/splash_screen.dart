@@ -262,7 +262,7 @@ class _SplashScreenState extends State<SplashScreen>
                           return Opacity(
                             opacity: _logoFadeAnimation.value,
                             child: Text(
-                              'StreamVibe',
+                              'Cinemate',
                               style: AppTheme.lightTheme.textTheme.headlineLarge
                                   ?.copyWith(
                                 color: AppTheme.lightTheme.colorScheme.primary,
