@@ -51,6 +51,7 @@ class UserModel {
     );
   }
 
+
   // Convert to Firestore document
   Map<String, dynamic> toFirestore() {
     return {
