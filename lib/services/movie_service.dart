@@ -178,6 +178,7 @@ class MovieService {
     }
   }
 
+
   // Update movie rating (this would typically be calculated from reviews)
   static Future<void> updateMovieRating(String movieId, double newRating) async {
     try {
