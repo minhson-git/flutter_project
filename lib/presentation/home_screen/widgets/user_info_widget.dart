@@ -48,7 +48,7 @@ class _UserInfoWidgetState extends State<UserInfoWidget> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi đăng xuất: $e'),
+            content: Text('Logout error: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -65,7 +65,7 @@ class _UserInfoWidgetState extends State<UserInfoWidget> {
           children: [
             CircularProgressIndicator(),
             SizedBox(width: 16),
-            Text('Đang tải...'),
+            Text('Loading...'),
           ],
         ),
       );
@@ -99,13 +99,13 @@ class _UserInfoWidgetState extends State<UserInfoWidget> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Xin chào,',
+                  'Hello,',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.grey[600],
                   ),
                 ),
                 Text(
-                  _user?.fullName ?? _user?.username ?? 'Người dùng',
+                  _user?.fullName ?? _user?.username ?? 'User',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -116,7 +116,7 @@ class _UserInfoWidgetState extends State<UserInfoWidget> {
           IconButton(
             onPressed: _signOut,
             icon: const Icon(Icons.logout),
-            tooltip: 'Đăng xuất',
+            tooltip: 'Log out',
           ),
         ],
       ),

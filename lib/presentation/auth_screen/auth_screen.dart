@@ -141,7 +141,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 // Title
                 Text(
-                  'StreamVibe',
+                  'Cinemate',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     fontWeight: FontWeight.bold,

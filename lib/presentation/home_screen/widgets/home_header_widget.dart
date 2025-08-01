@@ -32,9 +32,9 @@ class HomeHeaderWidget extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    'S',
+                    'C',
                     style: TextStyle(
-                      color: AppTheme.lightTheme.colorScheme.onPrimary,
+                      color: Colors.red,
                       fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
                     ),
@@ -43,7 +43,7 @@ class HomeHeaderWidget extends StatelessWidget {
               ),
               SizedBox(width: 3.w),
               Text(
-                'StreamVibe',
+                'Cinemate',
                 style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
                   color: AppTheme.lightTheme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,

@@ -127,7 +127,7 @@ class _FirebaseMoviesWidgetState extends State<FirebaseMoviesWidget> {
                 onPressed: () {
                   // Navigate to see all movies
                 },
-                child: const Text('Xem tất cả'),
+                child: const Text('See all'),
               ),
             ],
           ),

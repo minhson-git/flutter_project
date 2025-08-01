@@ -127,7 +127,7 @@ class HeroSectionWidget extends StatelessWidget {
 
                     // Duration
                     Text(
-                      '${movie.duration} phút',
+                      '${movie.duration} minute',
                       style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
                         color: Colors.white.withValues(alpha: 0.8),
                       ),

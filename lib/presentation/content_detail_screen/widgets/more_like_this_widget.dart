@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
+
 import '../../../core/app_export.dart';
 import '../../../models/movie_model.dart';
+import '../../../models/playlist_model.dart';
+import '../../../services/auth_service.dart';
+import '../../../services/playlist_service.dart';
 import '../content_detail_screen.dart';
 
 class MoreLikeThisWidget extends StatelessWidget {
@@ -23,7 +27,7 @@ class MoreLikeThisWidget extends StatelessWidget {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 4.w),
             child: Text(
-              "Phim tương tự",
+              "Similar movies",
               style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
                 color: AppTheme.lightTheme.colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
@@ -235,7 +239,7 @@ class _RelatedContentCard extends StatelessWidget {
             // Quick Actions
             _buildQuickAction(
               context,
-              "Phát",
+              "Play",
               "play_arrow",
               () {
                 Navigator.pop(context);
@@ -244,16 +248,16 @@ class _RelatedContentCard extends StatelessWidget {
             ),
             _buildQuickAction(
               context,
-              "Thêm vào Danh sách xem",
+              "Add to Watch List",
               "add",
               () {
                 Navigator.pop(context);
-                // Handle watchlist action
+                _showPlaylistSelection(context);
               },
             ),
             _buildQuickAction(
               context,
-              "Chia sẻ",
+              "Share",
               "share",
               () {
                 Navigator.pop(context);
@@ -285,5 +289,367 @@ class _RelatedContentCard extends StatelessWidget {
       ),
       onTap: onTap,
     );
+  }
+
+  void _showPlaylistSelection(BuildContext context) async {
+    try {
+      final currentUserId = AuthService.currentUser?.uid;
+      if (currentUserId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please login to use this feature')),
+        );
+        return;
+      }
+
+      // Load user playlists
+      final playlists = await PlaylistService.getUserPlaylists(currentUserId);
+      
+      if (!context.mounted) return;
+      
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        isScrollControlled: true,
+        builder: (context) => Container(
+          padding: EdgeInsets.all(4.w),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 12.w,
+                height: 0.5.h,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              SizedBox(height: 2.h),
+
+              // Title
+              Text(
+                'Add "${movie.title}" to playlist',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 3.h),
+
+              // Create new playlist option
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(2.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE50914),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 20),
+                ),
+                title: const Text(
+                  'Create new playlist',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showCreatePlaylistDialog(context);
+                },
+              ),
+
+              if (playlists.isNotEmpty) ...[
+                Divider(color: Colors.white.withValues(alpha: 0.2)),
+                SizedBox(height: 1.h),
+                
+                // Existing playlists
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: playlists.length,
+                    itemBuilder: (context, index) {
+                      final playlist = playlists[index];
+                      return ListTile(
+                        leading: Container(
+                          padding: EdgeInsets.all(2.w),
+                          decoration: BoxDecoration(
+                            color: playlist.isDefault 
+                                ? Colors.orange
+                                : const Color(0xFF4ECDC4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            playlist.isDefault 
+                                ? Icons.star
+                                : playlist.isPublic 
+                                    ? Icons.public
+                                    : Icons.playlist_play,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          playlist.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${playlist.movieCount} movie',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _addMovieToPlaylist(context, playlist);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ] else ...[
+                SizedBox(height: 2.h),
+                Container(
+                  padding: EdgeInsets.all(4.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A2A2A),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.playlist_add,
+                        size: 48,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
+                      SizedBox(height: 1.h),
+                      Text(
+                        'No playlist yet',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 16.sp,
+                        ),
+                      ),
+                      SizedBox(height: 1.h),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showCreatePlaylistDialog(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE50914),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Create your first playlist'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              SizedBox(height: 2.h),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Playlist download error: $e')),
+        );
+      }
+    }
+  }
+
+  void _showCreatePlaylistDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    final descriptionController = TextEditingController();
+    bool isPublic = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          title: const Text(
+            'Create new playlist',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Playlist name *',
+                  labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                  hintText: 'Enter playlist name',
+                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFE50914)),
+                  ),
+                ),
+              ),
+              SizedBox(height: 2.h),
+              TextField(
+                controller: descriptionController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                  hintText: 'Short description of playlist (optional)',
+                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFE50914)),
+                  ),
+                ),
+                maxLines: 2,
+              ),
+              CheckboxListTile(
+                title: const Text(
+                  'Publish',
+                  style: TextStyle(color: Colors.white),
+                ),
+                subtitle: Text(
+                  'Allow others to view this playlist',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                ),
+                value: isPublic,
+                activeColor: const Color(0xFFE50914),
+                onChanged: (value) {
+                  setState(() {
+                    isPublic = value ?? false;
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter playlist name')),
+                  );
+                  return;
+                }
+                Navigator.pop(context);
+                await _createPlaylistAndAddMovie(
+                  context,
+                  nameController.text.trim(),
+                  descriptionController.text.trim(),
+                  isPublic,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE50914),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Create and Add Movies'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _createPlaylistAndAddMovie(
+    BuildContext context,
+    String name,
+    String description,
+    bool isPublic,
+  ) async {
+    try {
+      final currentUserId = AuthService.currentUser?.uid;
+      if (currentUserId == null) return;
+
+      // Create playlist
+      final playlist = PlaylistModel(
+        userId: currentUserId,
+        name: name,
+        description: description,
+        isPublic: isPublic,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final createdPlaylist = await PlaylistService.createPlaylist(playlist);
+      
+      // Add movie to playlist
+      if (movie.id != null) {
+        await PlaylistService.addMovieToPlaylist(createdPlaylist, movie.id!);
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Created playlist "$name" and added "${movie.title}"'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Playlist creation error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _addMovieToPlaylist(BuildContext context, PlaylistModel playlist) async {
+    try {
+      if (movie.id == null || playlist.id == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: Invalid movie or playlist information')),
+        );
+        return;
+      }
+
+      await PlaylistService.addMovieToPlaylist(playlist.id!, movie.id!);
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Added "${movie.title}" to "${playlist.name}"'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error adding to playlist: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

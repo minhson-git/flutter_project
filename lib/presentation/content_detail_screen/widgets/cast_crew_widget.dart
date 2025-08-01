@@ -23,7 +23,7 @@ class CastCrewWidget extends StatelessWidget {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 4.w),
             child: Text(
-              "Diễn viên & Đoàn phim",
+              "Cast & Crew",
               style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
                 color: AppTheme.lightTheme.colorScheme.onSurface,
                 fontWeight: FontWeight.w600,

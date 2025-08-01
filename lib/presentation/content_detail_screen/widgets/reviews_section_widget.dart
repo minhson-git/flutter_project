@@ -44,7 +44,7 @@ class _ReviewsSectionWidgetState extends State<ReviewsSectionWidget> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Đánh giá & Nhận xét",
+                "Reviews & Comments",
                 style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
                   color: AppTheme.lightTheme.colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
@@ -62,7 +62,7 @@ class _ReviewsSectionWidgetState extends State<ReviewsSectionWidget> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    "Viết đánh giá",
+                    "Write a review",
                     style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -116,7 +116,7 @@ class _ReviewsSectionWidgetState extends State<ReviewsSectionWidget> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "${widget.reviews.length} đánh giá",
+                        "${widget.reviews.length} review",
                         style:
                             AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
                           color: AppTheme.lightTheme.colorScheme.onSurface,
@@ -125,7 +125,7 @@ class _ReviewsSectionWidgetState extends State<ReviewsSectionWidget> {
                       ),
                       SizedBox(height: 0.5.h),
                       Text(
-                        "Dựa trên đánh giá của người dùng",
+                        "Based on user reviews",
                         style:
                             AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                           color: AppTheme.lightTheme.colorScheme.onSurface
@@ -153,7 +153,7 @@ class _ReviewsSectionWidgetState extends State<ReviewsSectionWidget> {
                   });
                 },
                 child: Text(
-                  _showAllReviews ? "Ẩn bớt" : "Xem tất cả đánh giá",
+                  _showAllReviews ? "Hide" : "View all reviews",
                   style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
                     color: AppTheme.lightTheme.primaryColor,
                     fontWeight: FontWeight.w600,
@@ -240,7 +240,7 @@ class _ReviewCardState extends State<_ReviewCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Người dùng ${widget.review.userId.length >= 8 ? widget.review.userId.substring(0, 8) : widget.review.userId}", // Temporary placeholder
+                      "User ${widget.review.userId.length >= 8 ? widget.review.userId.substring(0, 8) : widget.review.userId}", // Temporary placeholder
                       style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
                         color: AppTheme.lightTheme.colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
@@ -307,7 +307,7 @@ class _ReviewCardState extends State<_ReviewCard> {
               child: Padding(
                 padding: EdgeInsets.only(top: 1.h),
                 child: Text(
-                  _isExpanded ? "Thu gọn" : "Xem thêm",
+                  _isExpanded ? "Collapse" : "See more",
                   style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                     color: AppTheme.lightTheme.primaryColor,
                     fontWeight: FontWeight.w600,
@@ -370,14 +370,14 @@ class _WriteReviewModalState extends State<_WriteReviewModal> {
           SizedBox(height: 2.h),
 
           Text(
-            "Viết đánh giá",
+            "Write a review",
             style: AppTheme.lightTheme.textTheme.titleLarge,
           ),
           SizedBox(height: 3.h),
 
           // Rating Selection
           Text(
-            "Đánh giá phim này",
+            "Rate this movie",
             style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -411,7 +411,7 @@ class _WriteReviewModalState extends State<_WriteReviewModal> {
             controller: _reviewController,
             maxLines: 4,
             decoration: InputDecoration(
-              hintText: "Chia sẻ suy nghĩ của bạn về bộ phim này...",
+              hintText: "Share your thoughts about this movie...",
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -430,7 +430,7 @@ class _WriteReviewModalState extends State<_WriteReviewModal> {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text("Bạn cần đăng nhập để viết đánh giá"),
+                            content: Text("You need to log in to write a review"),
                           ),
                         );
                         return;
@@ -482,7 +482,7 @@ class _WriteReviewModalState extends State<_WriteReviewModal> {
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text("Đánh giá đã được gửi thành công!"),
+                            content: Text("Review submitted successfully!"),
                             backgroundColor: Colors.green,
                           ),
                         );
@@ -494,7 +494,7 @@ class _WriteReviewModalState extends State<_WriteReviewModal> {
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text("Lỗi: $e"),
+                            content: Text("Error: $e"),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -502,7 +502,7 @@ class _WriteReviewModalState extends State<_WriteReviewModal> {
                     }
                   : null,
               child: Text(
-                "Gửi đánh giá",
+                "Submit review",
                 style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,

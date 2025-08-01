@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_project/presentation/content_detail_screen/video_player/video_player_screen.dart';
 import 'package:sizer/sizer.dart';
+import 'package:video_player/video_player.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/app_export.dart';
 import '../../models/movie_model.dart';
+import '../../models/playlist_model.dart';
 import '../../models/review_model.dart';
 import '../../models/user_model.dart';
 import '../../models/watch_history_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/movie_service.dart';
+import '../../services/playlist_service.dart';
 import '../../services/review_service.dart';
 import '../../services/user_service.dart';
 import '../../services/watch_history_service.dart';
@@ -18,6 +23,7 @@ import './widgets/description_section_widget.dart';
 import './widgets/hero_section_widget.dart';
 import './widgets/more_like_this_widget.dart';
 import './widgets/reviews_section_widget.dart';
+
 
 class ContentDetailScreen extends StatefulWidget {
   final String? movieId;
@@ -103,7 +109,7 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
           // Load user's watch history for this movie
           final watchHistoryList = await WatchHistoryService.getUserWatchHistory(currentUserId);
           _watchHistory = watchHistoryList.firstWhere(
-            (history) => history.movieId == _movie!.id,
+                (history) => history.movieId == _movie!.id,
             orElse: () => WatchHistoryModel(
               userId: currentUserId,
               movieId: _movie!.id!,
@@ -134,8 +140,8 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
           final allMovies = await MovieService.getAllMovies();
           _relatedMovies = allMovies
               .where((movie) =>
-                  movie.id != _movie!.id &&
-                  movie.genres.any((genre) => _movie!.genres.contains(genre)))
+          movie.id != _movie!.id &&
+              movie.genres.any((genre) => _movie!.genres.contains(genre)))
               .take(10)
               .toList();
         } catch (e) {
@@ -193,17 +199,32 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
     // Update watch history
     _updateWatchHistory();
 
-    // Launch video player in full-screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => _VideoPlayerScreen(
-          title: _movie!.title,
-          videoUrl: _movie!.trailerUrl ?? "sample_video_url",
-          movie: _movie!,
+    // Check if we have trailer URL
+    if (_movie!.trailerUrl != null && _movie!.trailerUrl!.isNotEmpty) {
+      // Navigate to video player screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VideoPlayerScreen(
+            title: '${_movie!.title} - Trailer',
+            videoUrl: _movie!.trailerUrl!,
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      // Show message that no trailer is available
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Trailer cho "${_movie!.title}" hiện chưa có sẵn'),
+          backgroundColor: const Color(0xFF1A1A1A),
+          action: SnackBarAction(
+            label: 'OK',
+            textColor: const Color(0xFFE50914),
+            onPressed: () {},
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _updateWatchHistory() async {
@@ -221,7 +242,7 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
 
       await WatchHistoryService.addOrUpdateWatchHistory(history);
     } catch (e) {
-      print('❌ Error updating watch history: $e');
+      print('Error updating watch history: $e');
     }
   }
 
@@ -275,7 +296,7 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
         );
       }
     } catch (e) {
-      print('❌ Error adding to favorites: $e');
+      print('Error adding to favorites: $e');
     }
   }
 
@@ -294,6 +315,373 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
         movie: _movie!,
       ),
     );
+  }
+
+  void _onMyListPressed() async {
+    if (_movie == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không tìm thấy thông tin phim')),
+      );
+      return;
+    }
+
+    try {
+      final currentUserId = AuthService.currentUser?.uid;
+      if (currentUserId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng đăng nhập để sử dụng tính năng này')),
+        );
+        return;
+      }
+
+      // Load user playlists
+      final playlists = await PlaylistService.getUserPlaylists(currentUserId);
+
+      if (!mounted) return;
+
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        isScrollControlled: true,
+        builder: (context) => Container(
+          padding: EdgeInsets.all(4.w),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 12.w,
+                height: 0.5.h,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              SizedBox(height: 2.h),
+
+              // Title
+              Text(
+                'Thêm "${_movie!.title}" vào playlist',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 3.h),
+
+              // Create new playlist option
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(2.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE50914),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 20),
+                ),
+                title: const Text(
+                  'Tạo playlist mới',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showCreatePlaylistDialog();
+                },
+              ),
+
+              if (playlists.isNotEmpty) ...[
+                Divider(color: Colors.white.withValues(alpha: 0.2)),
+                SizedBox(height: 1.h),
+
+                // Existing playlists
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: playlists.length,
+                    itemBuilder: (context, index) {
+                      final playlist = playlists[index];
+                      return ListTile(
+                        leading: Container(
+                          padding: EdgeInsets.all(2.w),
+                          decoration: BoxDecoration(
+                            color: playlist.isDefault
+                                ? Colors.orange
+                                : const Color(0xFF4ECDC4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            playlist.isDefault
+                                ? Icons.star
+                                : playlist.isPublic
+                                ? Icons.public
+                                : Icons.playlist_play,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          playlist.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${playlist.movieCount} phim',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _addMovieToPlaylist(playlist);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ] else ...[
+                SizedBox(height: 2.h),
+                Container(
+                  padding: EdgeInsets.all(4.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A2A2A),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.playlist_add,
+                        size: 48,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
+                      SizedBox(height: 1.h),
+                      Text(
+                        'Chưa có playlist nào',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 16.sp,
+                        ),
+                      ),
+                      SizedBox(height: 1.h),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showCreatePlaylistDialog();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE50914),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Tạo playlist đầu tiên'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              SizedBox(height: 2.h),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải playlist: $e')),
+        );
+      }
+    }
+  }
+
+  void _showCreatePlaylistDialog() {
+    final nameController = TextEditingController();
+    final descriptionController = TextEditingController();
+    bool isPublic = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          title: const Text(
+            'Tạo playlist mới',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Tên playlist *',
+                  labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                  hintText: 'Nhập tên playlist',
+                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFE50914)),
+                  ),
+                ),
+              ),
+              SizedBox(height: 2.h),
+              TextField(
+                controller: descriptionController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Mô tả',
+                  labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                  hintText: 'Mô tả ngắn về playlist (tùy chọn)',
+                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFE50914)),
+                  ),
+                ),
+                maxLines: 2,
+              ),
+              CheckboxListTile(
+                title: const Text(
+                  'Công khai',
+                  style: TextStyle(color: Colors.white),
+                ),
+                subtitle: Text(
+                  'Cho phép người khác xem playlist này',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                ),
+                value: isPublic,
+                activeColor: const Color(0xFFE50914),
+                onChanged: (value) {
+                  setState(() {
+                    isPublic = value ?? false;
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Hủy',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Vui lòng nhập tên playlist')),
+                  );
+                  return;
+                }
+                Navigator.pop(context);
+                await _createPlaylistAndAddMovie(
+                  nameController.text.trim(),
+                  descriptionController.text.trim(),
+                  isPublic,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE50914),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Tạo & Thêm phim'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _createPlaylistAndAddMovie(
+      String name,
+      String description,
+      bool isPublic,
+      ) async {
+    try {
+      final currentUserId = AuthService.currentUser?.uid;
+      if (currentUserId == null || _movie == null) return;
+
+      // Create playlist
+      final playlist = PlaylistModel(
+        userId: currentUserId,
+        name: name,
+        description: description,
+        isPublic: isPublic,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final createdPlaylist = await PlaylistService.createPlaylist(playlist);
+
+      // Add movie to playlist
+      if (_movie!.id != null) {
+        await PlaylistService.addMovieToPlaylist(createdPlaylist, _movie!.id!);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã tạo playlist "$name" và thêm "${_movie!.title}"'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tạo playlist: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _addMovieToPlaylist(PlaylistModel playlist) async {
+    try {
+      if (_movie?.id == null || playlist.id == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lỗi: Thông tin phim hoặc playlist không hợp lệ')),
+        );
+        return;
+      }
+
+      await PlaylistService.addMovieToPlaylist(playlist.id!, _movie!.id!);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã thêm "${_movie!.title}" vào "${playlist.name}"'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi thêm vào playlist: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _onBackPressed() {
@@ -347,6 +735,7 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
                   onPlayPressed: _onPlayPressed,
                   onWatchlistPressed: _onWatchlistPressed,
                   onSharePressed: _onSharePressed,
+                  onMyListPressed: _onMyListPressed,
                   watchHistory: _watchHistory,
                 ),
               ),
@@ -459,7 +848,7 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
 
   void _onReviewAdded(ReviewModel review) async {
     try {
-      print('🔄 Saving review to Firebase...');
+      print('Saving review to Firebase...');
       print('Review data: userId=${review.userId}, movieId=${review.movieId}, rating=${review.rating}');
 
       // Save review to Firebase
@@ -481,9 +870,9 @@ class _ContentDetailScreenState extends State<ContentDetailScreen> {
         _reviews.insert(0, reviewWithId);
       });
 
-      print('✅ Review added successfully: $reviewId');
+      print('Review added successfully: $reviewId');
     } catch (e) {
-      print('❌ Error adding review: $e');
+      print('Error adding review: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -514,6 +903,11 @@ class _VideoPlayerScreen extends StatefulWidget {
 
 class _VideoPlayerScreenState extends State<_VideoPlayerScreen> {
   bool _showControls = true;
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+  bool _isPlaying = false;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -524,10 +918,80 @@ class _VideoPlayerScreenState extends State<_VideoPlayerScreen> {
       DeviceOrientation.landscapeRight,
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    _initializeVideo();
+  }
+
+  Future<void> _initializeVideo() async {
+    try {
+      print('🎥 Initializing video: ${widget.videoUrl}');
+
+      // Check if URL is valid
+      if (widget.videoUrl.isEmpty || widget.videoUrl == "sample_video_url") {
+        setState(() {
+          _errorMessage = "URL video không hợp lệ";
+          _isLoading = false;
+        });
+        return;
+      }
+
+      _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+
+      await _controller!.initialize();
+
+      setState(() {
+        _isInitialized = true;
+        _isLoading = false;
+      });
+
+      // Auto-hide controls after 3 seconds
+      _autoHideControls();
+
+      print('Video initialized successfully');
+    } catch (e) {
+      print('Error initializing video: $e');
+      setState(() {
+        _errorMessage = "Không thể tải video: $e";
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _autoHideControls() {
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && _showControls) {
+        setState(() {
+          _showControls = false;
+        });
+      }
+    });
+  }
+
+  void _togglePlayPause() {
+    if (_controller == null || !_isInitialized) return;
+
+    setState(() {
+      if (_controller!.value.isPlaying) {
+        _controller!.pause();
+        _isPlaying = false;
+      } else {
+        _controller!.play();
+        _isPlaying = true;
+        _autoHideControls();
+      }
+    });
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return "${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
   }
 
   @override
   void dispose() {
+    _controller?.dispose();
     // Reset orientation when leaving video player
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -546,25 +1010,77 @@ class _VideoPlayerScreenState extends State<_VideoPlayerScreen> {
           setState(() {
             _showControls = !_showControls;
           });
+          if (_showControls) {
+            _autoHideControls();
+          }
         },
         child: Stack(
           children: [
-            // Video placeholder
+            // Video player or error/loading state
             Center(
-              child: Container(
-                width: double.infinity,
-                height: double.infinity,
+              child: _isLoading
+                  ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE50914)),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    'Đang tải video...',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16.sp,
+                    ),
+                  ),
+                ],
+              )
+                  : _errorMessage != null
+                  ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: Colors.red,
+                    size: 64,
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    _errorMessage!,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16.sp,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 2.h),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE50914),
+                    ),
+                    child: const Text(
+                      'Quay lại',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              )
+                  : _isInitialized
+                  ? AspectRatio(
+                aspectRatio: _controller!.value.aspectRatio,
+                child: VideoPlayer(_controller!),
+              )
+                  : Container(
                 color: Colors.black,
-                child: CustomIconWidget(
-                  iconName: 'play_circle_filled',
-                  color: AppTheme.lightTheme.primaryColor,
-                  size: 80,
+                child: const Center(
+                  child: CircularProgressIndicator(),
                 ),
               ),
             ),
 
             // Video controls overlay
-            if (_showControls)
+            if (_showControls && _isInitialized && _errorMessage == null)
               Container(
                 width: double.infinity,
                 height: double.infinity,
@@ -589,19 +1105,27 @@ class _VideoPlayerScreenState extends State<_VideoPlayerScreen> {
                           children: [
                             GestureDetector(
                               onTap: () => Navigator.pop(context),
-                              child: CustomIconWidget(
-                                iconName: 'arrow_back',
-                                color: Colors.white,
-                                size: 24,
+                              child: Container(
+                                padding: EdgeInsets.all(2.w),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.arrow_back,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
                               ),
                             ),
                             SizedBox(width: 4.w),
                             Expanded(
                               child: Text(
                                 widget.title,
-                                style: AppTheme.lightTheme.textTheme.titleMedium
-                                    ?.copyWith(
+                                style: TextStyle(
                                   color: Colors.white,
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -614,20 +1138,18 @@ class _VideoPlayerScreenState extends State<_VideoPlayerScreen> {
 
                     const Spacer(),
 
-                    // Center play button
+                    // Center play/pause button
                     GestureDetector(
-                      onTap: () {
-                        // Handle play/pause
-                      },
+                      onTap: _togglePlayPause,
                       child: Container(
-                        width: 15.w,
-                        height: 15.w,
+                        width: 80,
+                        height: 80,
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(50),
+                          borderRadius: BorderRadius.circular(40),
                         ),
-                        child: CustomIconWidget(
-                          iconName: 'play_arrow',
+                        child: Icon(
+                          _isPlaying ? Icons.pause : Icons.play_arrow,
                           color: Colors.white,
                           size: 40,
                         ),
@@ -639,39 +1161,43 @@ class _VideoPlayerScreenState extends State<_VideoPlayerScreen> {
                     // Bottom controls
                     Padding(
                       padding: EdgeInsets.all(2.w),
-                      child: Row(
+                      child: Column(
                         children: [
-                          Text(
-                            "00:00",
-                            style: AppTheme.lightTheme.textTheme.bodySmall
-                                ?.copyWith(
-                              color: Colors.white,
+                          // Progress bar
+                          VideoProgressIndicator(
+                            _controller!,
+                            allowScrubbing: true,
+                            colors: VideoProgressColors(
+                              playedColor: const Color(0xFFE50914),
+                              bufferedColor: Colors.white.withValues(alpha: 0.3),
+                              backgroundColor: Colors.white.withValues(alpha: 0.1),
                             ),
                           ),
-                          SizedBox(width: 2.w),
-                          Expanded(
-                            child: LinearProgressIndicator(
-                              value: 0.3,
-                              backgroundColor:
-                                  Colors.white.withValues(alpha: 0.3),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppTheme.lightTheme.primaryColor,
+                          SizedBox(height: 1.h),
+                          // Time and controls
+                          Row(
+                            children: [
+                              Text(
+                                _formatDuration(_controller!.value.position),
+                                style: const TextStyle(color: Colors.white),
                               ),
-                            ),
-                          ),
-                          SizedBox(width: 2.w),
-                          Text(
-                            "2:${widget.movie.duration}:00",
-                            style: AppTheme.lightTheme.textTheme.bodySmall
-                                ?.copyWith(
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(width: 4.w),
-                          CustomIconWidget(
-                            iconName: 'fullscreen',
-                            color: Colors.white,
-                            size: 24,
+                              const Spacer(),
+                              Text(
+                                _formatDuration(_controller!.value.duration),
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              SizedBox(width: 4.w),
+                              GestureDetector(
+                                onTap: () {
+                                  // Toggle fullscreen (already in fullscreen)
+                                },
+                                child: const Icon(
+                                  Icons.fullscreen,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -781,6 +1307,4 @@ class _ShareBottomSheet extends StatelessWidget {
       ),
     );
   }
-
-
 }

@@ -78,15 +78,15 @@ class _DescriptionSectionWidgetState extends State<DescriptionSectionWidget> {
           SizedBox(height: 3.h),
 
           // Movie Details
-          _buildDetailRow("Đạo diễn", widget.movie.director),
+          _buildDetailRow("Director", widget.movie.director),
           SizedBox(height: 1.h),
-          _buildDetailRow("Thể loại", widget.movie.genres.join(", ")),
+          _buildDetailRow("Category", widget.movie.genres.join(", ")),
           SizedBox(height: 1.h),
-          _buildDetailRow("Năm phát hành", widget.movie.releaseYear.toString()),
+          _buildDetailRow("Year of release", widget.movie.releaseYear.toString()),
           SizedBox(height: 1.h),
-          _buildDetailRow("Thời lượng", "${widget.movie.duration} phút"),
+          _buildDetailRow("Duration", "${widget.movie.duration} minute"),
           SizedBox(height: 1.h),
-          _buildDetailRow("Ngôn ngữ", widget.movie.language),
+          _buildDetailRow("Language", widget.movie.language),
         ],
       ),
     );

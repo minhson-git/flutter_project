@@ -9,6 +9,7 @@ class ActionButtonsWidget extends StatelessWidget {
   final VoidCallback onPlayPressed;
   final VoidCallback onWatchlistPressed;
   final VoidCallback onSharePressed;
+  final VoidCallback? onMyListPressed;
   final WatchHistoryModel? watchHistory;
 
   const ActionButtonsWidget({
@@ -17,6 +18,7 @@ class ActionButtonsWidget extends StatelessWidget {
     required this.onPlayPressed,
     required this.onWatchlistPressed,
     required this.onSharePressed,
+    this.onMyListPressed,
     this.watchHistory,
   });
 
@@ -54,20 +56,22 @@ class ActionButtonsWidget extends StatelessWidget {
           // Secondary Action Buttons
           Row(
             children: [
-              // Add to Watchlist Button
+              // Add to Watchlist Button (Favorites)
               Expanded(
                 child: SizedBox(
                   height: 5.h,
                   child: OutlinedButton.icon(
                     onPressed: onWatchlistPressed,
                     icon: CustomIconWidget(
-                      iconName: isInWatchlist ? 'check' : 'add',
-                      color: AppTheme.lightTheme.colorScheme.onSurface,
-                      size: 20,
+                      iconName: isInWatchlist ? 'favorite' : 'favorite_border',
+                      color: isInWatchlist 
+                          ? AppTheme.lightTheme.primaryColor
+                          : AppTheme.lightTheme.colorScheme.onSurface,
+                      size: 18,
                     ),
                     label: Text(
-                      isInWatchlist ? "Yêu thích" : "Yêu thích",
-                      style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                      "Favorite",
+                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                         color: AppTheme.lightTheme.colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
@@ -84,7 +88,39 @@ class ActionButtonsWidget extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(width: 3.w),
+              SizedBox(width: 2.w),
+
+              // My List Button (Add to Playlist)
+              Expanded(
+                child: SizedBox(
+                  height: 5.h,
+                  child: OutlinedButton.icon(
+                    onPressed: onMyListPressed,
+                    icon: CustomIconWidget(
+                      iconName: 'playlist_add',
+                      color: AppTheme.lightTheme.colorScheme.onSurface,
+                      size: 18,
+                    ),
+                    label: Text(
+                      "My List",
+                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                        color: AppTheme.lightTheme.colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: AppTheme.lightTheme.colorScheme.outline,
+                        width: 1,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 2.w),
 
               // Share Button
               Expanded(
@@ -95,11 +131,11 @@ class ActionButtonsWidget extends StatelessWidget {
                     icon: CustomIconWidget(
                       iconName: 'share',
                       color: AppTheme.lightTheme.colorScheme.onSurface,
-                      size: 20,
+                      size: 18,
                     ),
                     label: Text(
                       "Share",
-                      style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                         color: AppTheme.lightTheme.colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
@@ -125,12 +161,12 @@ class ActionButtonsWidget extends StatelessWidget {
 
   String _getPlayButtonText() {
     if (watchHistory == null || watchHistory!.watchDuration == 0) {
-      return "▶️ Phát";
+      return "▶️ Play";
     } else if (watchHistory!.isCompleted) {
-      return "🔄 Xem lại";
+      return "🔄 Watch Again";
     } else {
       final progress = watchHistory!.progressPercentage.round();
-      return "▶️ Tiếp tục ($progress%)";
+      return "▶️ Continue ($progress%)";
     }
   }
 }
