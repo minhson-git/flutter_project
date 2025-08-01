@@ -690,7 +690,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
 
-                            // Gradient overlay for visual effect
+                            // Gradient overlay for visual effects
                             Positioned.fill(
                               child: Container(
                                 decoration: BoxDecoration(
