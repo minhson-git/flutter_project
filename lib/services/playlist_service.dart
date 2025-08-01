@@ -1,5 +1,6 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/movie_model.dart';
 import '../models/playlist_model.dart';
 import 'firebase_service.dart';
 
@@ -84,6 +85,54 @@ class PlaylistService {
         'movieIds': FieldValue.arrayRemove([movieId]),
         'updatedAt': Timestamp.now(),
       });
+    } catch (e) {
+      throw Exception(FirebaseService.handleFirestoreError(e));
+    }
+  }
+
+  static Future<List<MovieModel>> getMoviesInPlaylist(String playlistId) async {
+    try {
+      final playlistDoc = await _playlistsCollection.doc(playlistId).get();
+      if (!playlistDoc.exists) {
+        return [];
+      }
+
+      final playlist = PlaylistModel.fromFirestore(playlistDoc);
+      if (playlist.movieIds.isEmpty) {
+        return [];
+      }
+
+      // Use MovieService to get movies by IDs
+      // Import MovieService at the top of the file
+      final movieService = FirebaseService.moviesCollection;
+      final movies = <MovieModel>[];
+
+      // Firestore 'in' query has a limit of 10 items, so we need to batch the requests
+      for (int i = 0; i < playlist.movieIds.length; i += 10) {
+        final batch = playlist.movieIds.sublist(
+            i,
+            (i + 10 > playlist.movieIds.length) ? playlist.movieIds.length : i + 10
+        );
+
+        final querySnapshot = await movieService
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
+
+        final batchMovies = querySnapshot.docs
+            .map((doc) => MovieModel.fromFirestore(doc))
+            .toList();
+
+        movies.addAll(batchMovies);
+      }
+
+      // Sort movies by the order they appear in the playlist
+      movies.sort((a, b) {
+        final indexA = playlist.movieIds.indexOf(a.id!);
+        final indexB = playlist.movieIds.indexOf(b.id!);
+        return indexA.compareTo(indexB);
+      });
+
+      return movies;
     } catch (e) {
       throw Exception(FirebaseService.handleFirestoreError(e));
     }

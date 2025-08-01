@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
-import '../../../core/app_export.dart';
+import '../../core/app_export.dart';
 import '../../models/movie_model.dart';
 import '../../models/playlist_model.dart';
 import '../../models/user_model.dart';
@@ -10,7 +10,7 @@ import '../../services/movie_service.dart';
 import '../../services/playlist_service.dart';
 import '../../services/user_service.dart';
 import '../../services/watch_history_service.dart';
-import 'edit_profile_screen.dart';
+import './edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -43,8 +43,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Load user profile
         _currentUser = await UserService.getUserProfile(currentUserId);
         
-        // Load user's playlists
-        _userPlaylists = await PlaylistService.getUserPlaylists(currentUserId);
+        // Load user's playlists (exclude default playlists)
+        final allPlaylists = await PlaylistService.getUserPlaylists(currentUserId);
+        _userPlaylists = allPlaylists.where((playlist) => !playlist.isDefault).toList();
         
         // Load watch history
         _watchHistory = await WatchHistoryService.getUserWatchHistory(currentUserId);
@@ -66,7 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       print('❌ Error loading user data: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading data: $e')),
+          SnackBar(content: Text('Lỗi tải dữ liệu: $e')),
         );
       }
     } finally {
@@ -98,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
     } catch (e) {
-      print('Error loading movies for watch history: $e');
+      print('❌ Error loading movies for watch history: $e');
     }
   }
 
@@ -126,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       Navigator.pushReplacementNamed(context, AppRoutes.authScreen);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Logout error: $e')),
+        SnackBar(content: Text('Lỗi đăng xuất: $e')),
       );
     }
   }
@@ -140,30 +141,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Create new playlist'),
+          title: const Text('Tạo playlist mới'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Playlist Name *',
-                  hintText: 'Enter playlist name',
+                  labelText: 'Tên playlist *',
+                  hintText: 'Nhập tên playlist',
                 ),
               ),
               SizedBox(height: 2.h),
               TextField(
                 controller: descriptionController,
                 decoration: const InputDecoration(
-                  labelText: 'Description',
-                  hintText: 'Short description of playlist (optional)',
+                  labelText: 'Mô tả',
+                  hintText: 'Mô tả ngắn về playlist (tùy chọn)',
                 ),
                 maxLines: 2,
               ),
               SizedBox(height: 1.h),
               CheckboxListTile(
-                title: const Text('Publish'),
-                subtitle: const Text('Allow others to view this playlist'),
+                title: const Text('Công khai'),
+                subtitle: const Text('Cho phép người khác xem playlist này'),
                 value: isPublic,
                 onChanged: (value) {
                   setDialogState(() {
@@ -176,13 +177,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: const Text('Hủy'),
             ),
             ElevatedButton(
               onPressed: () async {
                 if (nameController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter playlist name')),
+                    const SnackBar(content: Text('Vui lòng nhập tên playlist')),
                   );
                   return;
                 }
@@ -193,7 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 backgroundColor: AppTheme.lightTheme.primaryColor,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Create'),
+              child: const Text('Tạo'),
             ),
           ],
         ),
@@ -220,7 +221,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Create playlist successfully!'),
+            content: Text('Tạo playlist thành công!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -229,7 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Playlist creation error: $e'),
+            content: Text('Lỗi tạo playlist: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -240,10 +241,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _handlePlaylistAction(String action, PlaylistModel playlist) {
     switch (action) {
       case 'view':
-        // TODO: Navigate to playlist detail screen
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('View playlist: ${playlist.name}')),
-        );
+        _showPlaylistMoviesDialog(playlist);
         break;
       case 'edit':
         _showEditPlaylistDialog(playlist);
@@ -251,12 +249,597 @@ class _ProfileScreenState extends State<ProfileScreen> {
       case 'share':
         // TODO: Implement share functionality
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Share playlist: ${playlist.name}')),
+          SnackBar(content: Text('Chia sẻ playlist: ${playlist.name}')),
         );
         break;
       case 'delete':
         _showDeletePlaylistDialog(playlist);
         break;
+    }
+  }
+
+  void _showPlaylistMoviesDialog(PlaylistModel playlist) async {
+    try {
+      print('🎬 Loading movies for playlist: ${playlist.name} (ID: ${playlist.id})');
+      print('🎬 Is default playlist: ${playlist.isDefault}');
+      
+      // Load movies in playlist
+      final movies = await PlaylistService.getMoviesInPlaylist(playlist.id!);
+      
+      print('🎬 Found ${movies.length} movies in playlist');
+      for (var movie in movies) {
+        print('  - ${movie.title} (ID: ${movie.id})');
+      }
+      
+      if (!mounted) return;
+      
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (context) => Container(
+          height: MediaQuery.of(context).size.height * 0.9,
+          decoration: const BoxDecoration(
+            color: Color(0xFF0D0D0D),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                margin: EdgeInsets.only(top: 2.h),
+                width: 12.w,
+                height: 0.5.h,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // Header
+              Container(
+                padding: EdgeInsets.all(4.w),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFF1A1A1A),
+                      const Color(0xFF2A2A2A),
+                      const Color(0xFF1A1A1A),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                child: Column(
+                  children: [
+                    // Title Row
+                    Row(
+                      children: [
+                        // Playlist Icon
+                        Container(
+                          padding: EdgeInsets.all(3.w),
+                          decoration: BoxDecoration(
+                            gradient: playlist.isDefault
+                                ? const LinearGradient(colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)])
+                                : const LinearGradient(colors: [Color(0xFF667eea), Color(0xFF764ba2)]),
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: (playlist.isDefault
+                                    ? const Color(0xFFFF6B6B)
+                                    : const Color(0xFF667eea)).withValues(alpha: 0.3),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            playlist.isDefault
+                                ? Icons.star
+                                : playlist.isPublic
+                                    ? Icons.public
+                                    : Icons.playlist_play,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+
+                        SizedBox(width: 4.w),
+
+                        // Title and Info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                playlist.name,
+                                style: TextStyle(
+                                  fontSize: 22.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 0.5.h),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.8.h),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE50914),
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: Text(
+                                      '${movies.length} phim',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  if (playlist.isPublic) ...[
+                                    SizedBox(width: 2.w),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.8.h),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF4ECDC4),
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                      child: Text(
+                                        'Công khai',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Close Button
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: Container(
+                            padding: EdgeInsets.all(2.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Description
+                    if (playlist.description.isNotEmpty) ...[
+                      SizedBox(height: 2.h),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(3.w),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: Text(
+                          playlist.description,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 14.sp,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // Movies List
+              Expanded(
+                child: movies.isEmpty
+                  ? Container(
+                      margin: EdgeInsets.all(4.w),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A1A1A),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(6.w),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2A2A2A),
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                              child: Icon(
+                                Icons.movie_creation_outlined,
+                                size: 64,
+                                color: Colors.white.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            SizedBox(height: 3.h),
+                            Text(
+                              'Playlist trống',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontSize: 20.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(height: 1.h),
+                            Text(
+                              'Chưa có phim nào trong playlist này\nHãy thêm một số phim yêu thích!',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 14.sp,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.symmetric(horizontal: 4.w),
+                      itemCount: movies.length,
+                      itemBuilder: (context, index) {
+                        final movie = movies[index];
+                        return Container(
+                          margin: EdgeInsets.only(bottom: 3.h),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                const Color(0xFF1A1A1A),
+                                const Color(0xFF2A2A2A),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Stack(
+                              children: [
+                                // Main Content
+                                Padding(
+                                  padding: EdgeInsets.all(3.w),
+                                  child: Row(
+                                    children: [
+                                      // Movie Poster
+                                      Container(
+                                        width: 20.w,
+                                        height: 28.w,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.4),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: CustomImageWidget(
+                                            imageUrl: movie.posterUrl ?? '',
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                            height: double.infinity,
+                                          ),
+                                        ),
+                                      ),
+
+                                      SizedBox(width: 4.w),
+
+                                      // Movie Info
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              movie.title,
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16.sp,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+
+                                            SizedBox(height: 1.h),
+
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFF4ECDC4),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                  child: Text(
+                                                    movie.genres.first,
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 11.sp,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(width: 2.w),
+                                                Container(
+                                                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFE50914),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      const Icon(Icons.star, color: Colors.white, size: 12),
+                                                      SizedBox(width: 1.w),
+                                                      Text(
+                                                        movie.rating.toStringAsFixed(1),
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 11.sp,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+
+                                            SizedBox(height: 1.h),
+
+                                            Text(
+                                              '${movie.duration} phút • ${movie.releaseYear}',
+                                              style: TextStyle(
+                                                color: Colors.white.withValues(alpha: 0.6),
+                                                fontSize: 12.sp,
+                                              ),
+                                            ),
+
+                                            SizedBox(height: 1.5.h),
+
+                                            // Action Buttons Row
+                                            Row(
+                                              children: [
+                                                // Play Button
+                                                Expanded(
+                                                  child: ElevatedButton.icon(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                      Navigator.pushNamed(
+                                                        context,
+                                                        AppRoutes.contentDetailScreen,
+                                                        arguments: movie,
+                                                      );
+                                                    },
+                                                    icon: const Icon(Icons.play_arrow, size: 18),
+                                                    label: Text(
+                                                      'Xem',
+                                                      style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
+                                                    ),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: const Color(0xFFE50914),
+                                                      foregroundColor: Colors.white,
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(25),
+                                                      ),
+                                                      padding: EdgeInsets.symmetric(vertical: 1.h),
+                                                    ),
+                                                  ),
+                                                ),
+
+                                                SizedBox(width: 2.w),
+
+                                                // Remove Button - Always show for custom playlists
+                                                ElevatedButton.icon(
+                                                  onPressed: () =>   _showRemoveMovieDialog(playlist, movie),
+                                                  icon: const Icon(Icons.remove_circle_outline, size: 16),
+                                                  label: Text(
+                                                    'Xóa',
+                                                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
+                                                  ),
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Colors.red.withValues(alpha: 0.2),
+                                                    foregroundColor: Colors.red,
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(25),
+                                                    ),
+                                                    padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Gradient overlay for visual effect
+                                Positioned.fill(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black.withValues(alpha: 0.05),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tải playlist: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showRemoveMovieDialog(PlaylistModel playlist, MovieModel movie) {
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: Text(
+          'Xóa khỏi playlist',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          'Bạn có chắc chắn muốn xóa "${movie.title}" khỏi playlist "${playlist.name}"?',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Hủy',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Close playlist sheet
+
+              await _removeMovieFromPlaylist(playlist, movie);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text("Xóa"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _removeMovieFromPlaylist(PlaylistModel playlist, MovieModel movie) async {
+    try {
+      print('🗑️ Removing movie "${movie.title}" from playlist "${playlist.name}"');
+      print('🗑️ Playlist ID: ${playlist.id}, Movie ID: ${movie.id}');
+      
+      if (playlist.id == null || movie.id == null) {
+        print('❌ Error: Playlist ID or Movie ID is null');
+        return;
+      }
+
+      await PlaylistService.removeMovieFromPlaylist(playlist.id!, movie.id!);
+      print('✅ Successfully removed movie from playlist');
+      
+      await _refreshUserData(); // Reload data to update playlist stats
+      print('✅ Refreshed user data');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã xóa "${movie.title}" khỏi "${playlist.name}"'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'Hoàn tác',
+              onPressed: () => _undoRemoveFromPlaylist(playlist, movie),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error removing movie from playlist: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi xóa phim khỏi playlist: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _undoRemoveFromPlaylist(PlaylistModel playlist, MovieModel movie) async {
+    try {
+      if (playlist.id == null || movie.id == null) return;
+
+      await PlaylistService.addMovieToPlaylist(playlist.id!, movie.id!);
+      await _refreshUserData(); // Reload data
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã khôi phục "${movie.title}" vào "${playlist.name}"'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khôi phục phim: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -269,27 +852,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Edit playlist'),
+          title: const Text('Chỉnh sửa playlist'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Playlist Name *',
+                  labelText: 'Tên playlist *',
                 ),
               ),
               SizedBox(height: 2.h),
               TextField(
                 controller: descriptionController,
                 decoration: const InputDecoration(
-                  labelText: 'Description',
+                  labelText: 'Mô tả',
                 ),
                 maxLines: 2,
               ),
               SizedBox(height: 1.h),
               CheckboxListTile(
-                title: const Text('Publish'),
+                title: const Text('Công khai'),
                 value: isPublic,
                 onChanged: (value) {
                   setDialogState(() {
@@ -302,13 +885,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: const Text('Hủy'),
             ),
             ElevatedButton(
               onPressed: () async {
                 if (nameController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter playlist name')),
+                    const SnackBar(content: Text('Vui lòng nhập tên playlist')),
                   );
                   return;
                 }
@@ -319,7 +902,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 backgroundColor: AppTheme.lightTheme.primaryColor,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Update'),
+              child: const Text('Cập nhật'),
             ),
           ],
         ),
@@ -342,7 +925,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Playlist updated successfully!'),
+            content: Text('Cập nhật playlist thành công!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -351,7 +934,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Playlist update error: $e'),
+            content: Text('Lỗi cập nhật playlist: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -363,12 +946,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete playlist'),
-        content: Text('Are you sure you want to delete playlist "${playlist.name}"?\nThis action cannot be undone.'),
+        title: const Text('Xóa playlist'),
+        content: Text('Bạn có chắc chắn muốn xóa playlist "${playlist.name}"?\nHành động này không thể hoàn tác.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Hủy'),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -379,7 +962,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Delete'),
+            child: const Text('Xóa'),
           ),
         ],
       ),
@@ -394,7 +977,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Playlist deleted successfully!'),
+            content: Text('Xóa playlist thành công!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -403,7 +986,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Playlist deletion error: $e'),
+            content: Text('Lỗi xóa playlist: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -428,9 +1011,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Removed "${movie.title}" from favorites list'),
+            content: Text('Đã xóa "${movie.title}" khỏi danh sách yêu thích'),
             action: SnackBarAction(
-              label: 'Undo',
+              label: 'Hoàn tác',
               onPressed: () => _addToFavorites(movie),
             ),
           ),
@@ -440,7 +1023,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error removing from favorites: $e'),
+            content: Text('Lỗi xóa khỏi yêu thích: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -465,7 +1048,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Added "${movie.title}" to favorites'),
+            content: Text('Đã thêm "${movie.title}" vào danh sách yêu thích'),
             backgroundColor: Colors.green,
           ),
         );
@@ -474,7 +1057,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error adding to favorites: $e'),
+            content: Text('Lỗi thêm vào yêu thích: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -506,7 +1089,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         body: const Center(
           child: Text(
-            'User information not found',
+            'Không tìm thấy thông tin user',
             style: TextStyle(color: Colors.white),
           ),
         ),
@@ -536,7 +1119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 IconButton(
                   onPressed: _signOut,
                   icon: const Icon(Icons.logout),
-                  tooltip: 'Log out',
+                  tooltip: 'Đăng xuất',
                 ),
               ],
             ),
@@ -650,7 +1233,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ElevatedButton.icon(
                 onPressed: _navigateToEditProfile,
                 icon: const Icon(Icons.edit, size: 18),
-                label: const Text('Edit profile'),
+                label: const Text('Chỉnh sửa profile'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white.withValues(alpha: 0.1),
                   foregroundColor: Colors.white,
@@ -767,7 +1350,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: _buildStatCard(
                 icon: Icons.favorite,
-                title: 'Favourites',
+                title: 'Yêu thích',
                 value: _currentUser!.favoriteMovies.length.toString(),
                 gradient: const LinearGradient(colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)]),
               ),
@@ -790,7 +1373,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: _buildStatCard(
                 icon: Icons.history,
-                title: 'Viewed',
+                title: 'Đã xem',
                 value: _watchHistory.length.toString(),
                 gradient: const LinearGradient(colors: [Color(0xFF667eea), Color(0xFF764ba2)]),
               ),
@@ -799,7 +1382,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: _buildStatCard(
                 icon: Icons.access_time,
-                title: 'Time',
+                title: 'Thời gian',
                 value: watchTimeText,
                 gradient: const LinearGradient(colors: [Color(0xFFf093fb), Color(0xFFf5576c)]),
               ),
@@ -862,7 +1445,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Favorite Movies',
+              'Phim yêu thích',
               style: TextStyle(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
@@ -875,7 +1458,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // TODO: Navigate to all favorites
                 },
                 child: Text(
-                  'View All',
+                  'Xem tất cả',
                   style: TextStyle(color: const Color(0xFFE50914)),
                 ),
               ),
@@ -900,7 +1483,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    'No favorite movies yet',
+                    'Chưa có phim yêu thích nào',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 16.sp,
@@ -1052,7 +1635,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'My Playlists',
+              'Playlists của tôi',
               style: TextStyle(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
@@ -1065,7 +1648,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
               icon: const Icon(Icons.add, color: Color(0xFFE50914)),
               label: Text(
-                'Create new',
+                'Tạo mới',
                 style: TextStyle(color: const Color(0xFFE50914)),
               ),
             ),
@@ -1090,7 +1673,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    'No playlist yet',
+                    'Chưa có playlist nào',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 16.sp,
@@ -1100,7 +1683,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ElevatedButton.icon(
                     onPressed: _showCreatePlaylistDialog,
                     icon: const Icon(Icons.add),
-                    label: const Text('Create your first playlist'),
+                    label: const Text('Tạo playlist đầu tiên'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFE50914),
                       foregroundColor: Colors.white,
@@ -1172,7 +1755,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              'Publish',
+                              'Công khai',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 10.sp,
@@ -1187,7 +1770,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         SizedBox(height: 0.5.h),
                         Text(
-                          '${playlist.movieCount} movie • $durationText',
+                          '${playlist.movieCount} phim • $durationText',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.7),
                             fontSize: 14.sp,
@@ -1208,7 +1791,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         SizedBox(height: 0.5.h),
                         Text(
-                          'Update ${_getTimeAgo(playlist.updatedAt)}',
+                          'Cập nhật ${_getTimeAgo(playlist.updatedAt)}',
                           style: TextStyle(
                             fontSize: 11.sp,
                             color: Colors.white.withValues(alpha: 0.5),
@@ -1228,7 +1811,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           value: 'view',
                           child: ListTile(
                             leading: const Icon(Icons.visibility, color: Colors.white),
-                            title: const Text('View playlist', style: TextStyle(color: Colors.white)),
+                            title: const Text('Xem playlist', style: TextStyle(color: Colors.white)),
                             contentPadding: EdgeInsets.zero,
                           ),
                         ),
@@ -1237,7 +1820,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             value: 'edit',
                             child: ListTile(
                               leading: const Icon(Icons.edit, color: Colors.white),
-                              title: const Text('Edit', style: TextStyle(color: Colors.white)),
+                              title: const Text('Chỉnh sửa', style: TextStyle(color: Colors.white)),
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),
@@ -1245,7 +1828,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           value: 'share',
                           child: ListTile(
                             leading: const Icon(Icons.share, color: Colors.white),
-                            title: const Text('Share', style: TextStyle(color: Colors.white)),
+                            title: const Text('Chia sẻ', style: TextStyle(color: Colors.white)),
                             contentPadding: EdgeInsets.zero,
                           ),
                         ),
@@ -1254,7 +1837,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             value: 'delete',
                             child: ListTile(
                               leading: const Icon(Icons.delete, color: Colors.red),
-                              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+                              title: const Text('Xóa', style: TextStyle(color: Colors.red)),
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),
@@ -1282,7 +1865,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Recently Viewed',
+              'Xem gần đây',
               style: TextStyle(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
@@ -1295,7 +1878,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // TODO: Navigate to full watch history
                 },
                 child: Text(
-                  'View all',
+                  'Xem tất cả',
                   style: TextStyle(color: const Color(0xFFE50914)),
                 ),
               ),
@@ -1304,7 +1887,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         recentHistory.isEmpty
           ? Container(
               padding: EdgeInsets.all(6.w),
-              width: 450,
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A1A),
                 borderRadius: BorderRadius.circular(16),
@@ -1319,7 +1901,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    'No viewing history yet',
+                    'Chưa có lịch sử xem nào',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 16.sp,
@@ -1388,7 +1970,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     title: Text(
-                      movie?.title ?? 'Movie not found',
+                      movie?.title ?? 'Phim không tìm thấy',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 16.sp,
@@ -1402,7 +1984,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         SizedBox(height: 0.5.h),
                         Text(
-                          'Watch $watchMinutes minutes • $progressPercentage%',
+                          'Xem $watchMinutes phút • $progressPercentage%',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.7),
                             fontSize: 14.sp,
@@ -1429,7 +2011,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              'Completed',
+                              'Hoàn thành',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 10.sp,
@@ -1474,13 +2056,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final difference = now.difference(dateTime);
 
     if (difference.inDays > 0) {
-      return '${difference.inDays} the day before';
+      return '${difference.inDays} ngày trước';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour ago';
+      return '${difference.inHours} giờ trước';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minutes ago';
+      return '${difference.inMinutes} phút trước';
     } else {
-      return 'Just finished';
+      return 'Vừa xong';
     }
   }
 
@@ -1489,7 +2071,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Setting',
+          '⚙️ Cài đặt',
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.bold,
@@ -1507,13 +2089,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _buildSettingsTile(
                 icon: Icons.person,
-                title: 'Edit information',
+                title: 'Chỉnh sửa thông tin',
                 onTap: _navigateToEditProfile,
               ),
               _buildDivider(),
               _buildSettingsTile(
                 icon: Icons.notifications,
-                title: 'Notification',
+                title: 'Thông báo',
                 onTap: () {
                   // TODO: Navigate to notifications settings
                 },
@@ -1521,7 +2103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildDivider(),
               _buildSettingsTile(
                 icon: Icons.security,
-                title: 'Security',
+                title: 'Bảo mật',
                 onTap: () {
                   // TODO: Navigate to security settings
                 },
@@ -1529,7 +2111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildDivider(),
               _buildSettingsTile(
                 icon: Icons.help,
-                title: 'Help',
+                title: 'Trợ giúp',
                 onTap: () {
                   // TODO: Navigate to help
                 },
@@ -1537,7 +2119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildDivider(),
               _buildSettingsTile(
                 icon: Icons.logout,
-                title: 'Log out',
+                title: 'Đăng xuất',
                 onTap: _signOut,
                 isDestructive: true,
               ),
