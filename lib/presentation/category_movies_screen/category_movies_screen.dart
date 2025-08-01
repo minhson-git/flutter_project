@@ -30,7 +30,6 @@ class _CategoryMoviesScreenState extends State<CategoryMoviesScreen> {
   String _sortBy = 'rating'; // rating, newest, alphabetical, popularity
   bool _isGridView = true; // true for grid, false for list
 
-  
   @override
   void initState() {
     super.initState();
