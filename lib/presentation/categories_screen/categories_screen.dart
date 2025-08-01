@@ -246,6 +246,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     );
   }
 
+
   void _showSortOptions() {
     showModalBottomSheet(
       context: context,
