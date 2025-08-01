@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../../core/app_export.dart';
+import '../models/playlist_model.dart';
+import '../models/user_model.dart';
+import '../models/watch_history_model.dart';
 import './edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -27,30 +30,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final currentUserId = AuthService.currentUser?.uid;
       if (currentUserId != null) {
         // Load user profile
         _currentUser = await UserService.getUserProfile(currentUserId);
-        
-        // Load user's playlists
-        _userPlaylists = await PlaylistService.getUserPlaylists(currentUserId);
-        
+
+        // Load user's playlists (exclude default playlists)
+        final allPlaylists = await PlaylistService.getUserPlaylists(currentUserId);
+        _userPlaylists = allPlaylists.where((playlist) => !playlist.isDefault).toList();
+
         // Load watch history
         _watchHistory = await WatchHistoryService.getUserWatchHistory(currentUserId);
-        
+
         // Calculate total watch time (convert from seconds to minutes)
         _totalWatchTime = _watchHistory.fold(0, (sum, history) => sum + (history.watchDuration ~/ 60));
-        
+
         // Load movie data for watch history
         await _loadMoviesForWatchHistory();
-        
+
         // Load favorite movies
         if (_currentUser != null && _currentUser!.favoriteMovies.isNotEmpty) {
           _favoriteMovies = await MovieService.getMoviesByIds(_currentUser!.favoriteMovies);
         }
-        
+
         print('✅ Loaded user data: ${_currentUser?.username}, ${_userPlaylists.length} playlists, ${_favoriteMovies.length} favorites, ${_watchHistory.length} watch history items');
       }
     } catch (e) {
@@ -75,14 +79,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       // Get unique movie IDs from watch history
       final movieIds = _watchHistory.map((h) => h.movieId).toSet().toList();
-      
+
       if (movieIds.isNotEmpty) {
         // Load movies in batches to avoid Firestore limitations
         _movieCache.clear();
         for (int i = 0; i < movieIds.length; i += 10) {
           final batch = movieIds.sublist(i, (i + 10 > movieIds.length) ? movieIds.length : i + 10);
           final movies = await MovieService.getMoviesByIds(batch);
-          
+
           for (final movie in movies) {
             _movieCache[movie.id!] = movie;
           }
@@ -95,14 +99,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _navigateToEditProfile() async {
     if (_currentUser == null) return;
-    
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditProfileScreen(user: _currentUser!),
       ),
     );
-    
+
     // If user data was updated, refresh the profile
     if (result != null && result is UserModel) {
       setState(() {
@@ -207,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       await PlaylistService.createPlaylist(playlist);
       await _refreshUserData(); // Reload data
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -231,16 +235,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _handlePlaylistAction(String action, PlaylistModel playlist) {
     switch (action) {
       case 'view':
-        // TODO: Navigate to playlist detail screen
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Xem playlist: ${playlist.name}')),
-        );
+        _showPlaylistMoviesDialog(playlist);
         break;
       case 'edit':
         _showEditPlaylistDialog(playlist);
         break;
       case 'share':
-        // TODO: Implement share functionality
+      // TODO: Implement share functionality
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Chia sẻ playlist: ${playlist.name}')),
         );
@@ -248,6 +249,591 @@ class _ProfileScreenState extends State<ProfileScreen> {
       case 'delete':
         _showDeletePlaylistDialog(playlist);
         break;
+    }
+  }
+
+  void _showPlaylistMoviesDialog(PlaylistModel playlist) async {
+    try {
+      print('🎬 Loading movies for playlist: ${playlist.name} (ID: ${playlist.id})');
+      print('🎬 Is default playlist: ${playlist.isDefault}');
+
+      // Load movies in playlist
+      final movies = await PlaylistService.getMoviesInPlaylist(playlist.id!);
+
+      print('🎬 Found ${movies.length} movies in playlist');
+      for (var movie in movies) {
+        print('  - ${movie.title} (ID: ${movie.id})');
+      }
+
+      if (!mounted) return;
+
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (context) => Container(
+          height: MediaQuery.of(context).size.height * 0.9,
+          decoration: const BoxDecoration(
+            color: Color(0xFF0D0D0D),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                margin: EdgeInsets.only(top: 2.h),
+                width: 12.w,
+                height: 0.5.h,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+
+              // Header
+              Container(
+                padding: EdgeInsets.all(4.w),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFF1A1A1A),
+                      const Color(0xFF2A2A2A),
+                      const Color(0xFF1A1A1A),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                child: Column(
+                  children: [
+                    // Title Row
+                    Row(
+                      children: [
+                        // Playlist Icon
+                        Container(
+                          padding: EdgeInsets.all(3.w),
+                          decoration: BoxDecoration(
+                            gradient: playlist.isDefault
+                                ? const LinearGradient(colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)])
+                                : const LinearGradient(colors: [Color(0xFF667eea), Color(0xFF764ba2)]),
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: (playlist.isDefault
+                                    ? const Color(0xFFFF6B6B)
+                                    : const Color(0xFF667eea)).withValues(alpha: 0.3),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            playlist.isDefault
+                                ? Icons.star
+                                : playlist.isPublic
+                                ? Icons.public
+                                : Icons.playlist_play,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+
+                        SizedBox(width: 4.w),
+
+                        // Title and Info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                playlist.name,
+                                style: TextStyle(
+                                  fontSize: 22.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 0.5.h),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.8.h),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE50914),
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: Text(
+                                      '${movies.length} phim',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  if (playlist.isPublic) ...[
+                                    SizedBox(width: 2.w),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.8.h),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF4ECDC4),
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                      child: Text(
+                                        'Công khai',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Close Button
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: Container(
+                            padding: EdgeInsets.all(2.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Description
+                    if (playlist.description.isNotEmpty) ...[
+                      SizedBox(height: 2.h),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(3.w),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: Text(
+                          playlist.description,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 14.sp,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // Movies List
+              Expanded(
+                child: movies.isEmpty
+                    ? Container(
+                  margin: EdgeInsets.all(4.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(6.w),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2A2A2A),
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                          child: Icon(
+                            Icons.movie_creation_outlined,
+                            size: 64,
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        SizedBox(height: 3.h),
+                        Text(
+                          'Playlist trống',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 20.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: 1.h),
+                        Text(
+                          'Chưa có phim nào trong playlist này\nHãy thêm một số phim yêu thích!',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 14.sp,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                    : ListView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 4.w),
+                  itemCount: movies.length,
+                  itemBuilder: (context, index) {
+                    final movie = movies[index];
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 3.h),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF1A1A1A),
+                            const Color(0xFF2A2A2A),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Stack(
+                          children: [
+                            // Main Content
+                            Padding(
+                              padding: EdgeInsets.all(3.w),
+                              child: Row(
+                                children: [
+                                  // Movie Poster
+                                  Container(
+                                    width: 20.w,
+                                    height: 28.w,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.4),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: CustomImageWidget(
+                                        imageUrl: movie.posterUrl ?? '',
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                      ),
+                                    ),
+                                  ),
+
+                                  SizedBox(width: 4.w),
+
+                                  // Movie Info
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          movie.title,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16.sp,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+
+                                        SizedBox(height: 1.h),
+
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF4ECDC4),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                movie.genres.first,
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 11.sp,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: 2.w),
+                                            Container(
+                                              padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFE50914),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(Icons.star, color: Colors.white, size: 12),
+                                                  SizedBox(width: 1.w),
+                                                  Text(
+                                                    movie.rating.toStringAsFixed(1),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 11.sp,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+
+                                        SizedBox(height: 1.h),
+
+                                        Text(
+                                          '${movie.duration} phút • ${movie.releaseYear}',
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(alpha: 0.6),
+                                            fontSize: 12.sp,
+                                          ),
+                                        ),
+
+                                        SizedBox(height: 1.5.h),
+
+                                        // Action Buttons Row
+                                        Row(
+                                          children: [
+                                            // Play Button
+                                            Expanded(
+                                              child: ElevatedButton.icon(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                  Navigator.pushNamed(
+                                                    context,
+                                                    AppRoutes.contentDetailScreen,
+                                                    arguments: movie,
+                                                  );
+                                                },
+                                                icon: const Icon(Icons.play_arrow, size: 18),
+                                                label: Text(
+                                                  'Xem',
+                                                  style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
+                                                ),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: const Color(0xFFE50914),
+                                                  foregroundColor: Colors.white,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(25),
+                                                  ),
+                                                  padding: EdgeInsets.symmetric(vertical: 1.h),
+                                                ),
+                                              ),
+                                            ),
+
+                                            SizedBox(width: 2.w),
+
+                                            // Remove Button - Always show for custom playlists
+                                            ElevatedButton.icon(
+                                              onPressed: () =>   _showRemoveMovieDialog(playlist, movie),
+                                              icon: const Icon(Icons.remove_circle_outline, size: 16),
+                                              label: Text(
+                                                'Xóa',
+                                                style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
+                                              ),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.red.withValues(alpha: 0.2),
+                                                foregroundColor: Colors.red,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(25),
+                                                ),
+                                                padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Gradient overlay for visual effect
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withValues(alpha: 0.05),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tải playlist: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showRemoveMovieDialog(PlaylistModel playlist, MovieModel movie) {
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: Text(
+          'Xóa khỏi playlist',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          'Bạn có chắc chắn muốn xóa "${movie.title}" khỏi playlist "${playlist.name}"?',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Hủy',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Close playlist sheet
+
+              await _removeMovieFromPlaylist(playlist, movie);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text("Xóa"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _removeMovieFromPlaylist(PlaylistModel playlist, MovieModel movie) async {
+    try {
+      print('🗑️ Removing movie "${movie.title}" from playlist "${playlist.name}"');
+      print('🗑️ Playlist ID: ${playlist.id}, Movie ID: ${movie.id}');
+
+      if (playlist.id == null || movie.id == null) {
+        print('❌ Error: Playlist ID or Movie ID is null');
+        return;
+      }
+
+      await PlaylistService.removeMovieFromPlaylist(playlist.id!, movie.id!);
+      print('✅ Successfully removed movie from playlist');
+
+      await _refreshUserData(); // Reload data to update playlist stats
+      print('✅ Refreshed user data');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã xóa "${movie.title}" khỏi "${playlist.name}"'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'Hoàn tác',
+              onPressed: () => _undoRemoveFromPlaylist(playlist, movie),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error removing movie from playlist: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi xóa phim khỏi playlist: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _undoRemoveFromPlaylist(PlaylistModel playlist, MovieModel movie) async {
+    try {
+      if (playlist.id == null || movie.id == null) return;
+
+      await PlaylistService.addMovieToPlaylist(playlist.id!, movie.id!);
+      await _refreshUserData(); // Reload data
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã khôi phục "${movie.title}" vào "${playlist.name}"'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khôi phục phim: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -329,7 +915,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       await PlaylistService.updatePlaylist(updatedPlaylist);
       await _refreshUserData(); // Reload data
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -381,7 +967,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await PlaylistService.deletePlaylist(playlist.id!);
       await _refreshUserData(); // Reload data
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -407,7 +993,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (_currentUser == null || movie.id == null) return;
 
       await UserService.removeFromFavorites(_currentUser!.id!, movie.id!);
-      
+
       // Update local state
       setState(() {
         _favoriteMovies.removeWhere((m) => m.id == movie.id);
@@ -415,7 +1001,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           favoriteMovies: _currentUser!.favoriteMovies.where((id) => id != movie.id).toList(),
         );
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -444,7 +1030,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (_currentUser == null || movie.id == null) return;
 
       await UserService.addToFavorites(_currentUser!.id!, movie.id!);
-      
+
       // Update local state
       setState(() {
         _favoriteMovies.add(movie);
@@ -452,7 +1038,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           favoriteMovies: [..._currentUser!.favoriteMovies, movie.id!],
         );
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -531,7 +1117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-            
+
             // Content
             SliverToBoxAdapter(
               child: Padding(
@@ -540,27 +1126,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     // Stats Row
                     _buildStatsRow(),
-                    
+
                     SizedBox(height: 3.h),
-                    
+
                     // Favorite Movies Section
                     _buildFavoriteMoviesSection(),
-                    
+
                     SizedBox(height: 3.h),
-                    
+
                     // User Playlists Section
                     _buildPlaylistsSection(),
-                    
+
                     SizedBox(height: 3.h),
-                    
+
                     // Recent Watch History Section
                     _buildRecentWatchHistorySection(),
-                    
+
                     SizedBox(height: 3.h),
-                    
+
                     // Settings Section
                     _buildSettingsSection(),
-                    
+
                     SizedBox(height: 2.h),
                   ],
                 ),
@@ -607,23 +1193,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   radius: 60,
                   backgroundColor: const Color(0xFFE50914),
                   backgroundImage: _currentUser!.profileImageUrl != null
-                    ? NetworkImage(_currentUser!.profileImageUrl!)
-                    : null,
+                      ? NetworkImage(_currentUser!.profileImageUrl!)
+                      : null,
                   child: _currentUser!.profileImageUrl == null
-                    ? Text(
-                        _currentUser!.username[0].toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 32.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      )
-                    : null,
+                      ? Text(
+                    _currentUser!.username[0].toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 32.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  )
+                      : null,
                 ),
               ),
-              
+
               SizedBox(height: 2.h),
-              
+
               // User Name
               Text(
                 _currentUser!.fullName ?? _currentUser!.username,
@@ -636,7 +1222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
 
               SizedBox(height: 2.h),
-              
+
               // Edit Profile Button
               ElevatedButton.icon(
                 onPressed: _navigateToEditProfile,
@@ -672,22 +1258,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               radius: 40,
               backgroundColor: AppTheme.lightTheme.primaryColor,
               backgroundImage: _currentUser!.profileImageUrl != null
-                ? NetworkImage(_currentUser!.profileImageUrl!)
-                : null,
+                  ? NetworkImage(_currentUser!.profileImageUrl!)
+                  : null,
               child: _currentUser!.profileImageUrl == null
-                ? Text(
-                    _currentUser!.username[0].toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 24.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  )
-                : null,
+                  ? Text(
+                _currentUser!.username[0].toUpperCase(),
+                style: TextStyle(
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              )
+                  : null,
             ),
-            
+
             SizedBox(width: 4.w),
-            
+
             // User Details
             Expanded(
               child: Column(
@@ -727,7 +1313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            
+
             // Edit Button
             IconButton(
               onPressed: _navigateToEditProfile,
@@ -746,7 +1332,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Calculate hours from minutes
     final totalHours = (_totalWatchTime / 60).floor();
     final totalMinutes = _totalWatchTime % 60;
-    final watchTimeText = totalHours > 0 
+    final watchTimeText = totalHours > 0
         ? '${totalHours}h ${totalMinutes}m'
         : '${totalMinutes}m';
 
@@ -874,163 +1460,163 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         SizedBox(height: 2.h),
         _favoriteMovies.isEmpty
-          ? Container(
-              padding: EdgeInsets.all(6.w),
-              width: 450,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ? Container(
+          padding: EdgeInsets.all(6.w),
+          width: 450,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.favorite_border,
+                size: 48,
+                color: Colors.white.withValues(alpha: 0.5),
               ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    size: 48,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    'Chưa có phim yêu thích nào',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 16.sp,
-                    ),
-                  ),
-                ],
+              SizedBox(height: 2.h),
+              Text(
+                'Chưa có phim yêu thích nào',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 16.sp,
+                ),
               ),
-            )
-          : SizedBox(
-              height: 25.h,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _favoriteMovies.take(5).length,
-                itemBuilder: (context, index) {
-                  final movie = _favoriteMovies[index];
-                  return Container(
-                    width: 35.w,
-                    margin: EdgeInsets.only(right: 3.w),
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.contentDetailScreen,
-                          arguments: movie,
-                        );
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
+            ],
+          ),
+        )
+            : SizedBox(
+          height: 25.h,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _favoriteMovies.take(5).length,
+            itemBuilder: (context, index) {
+              final movie = _favoriteMovies[index];
+              return Container(
+                width: 35.w,
+                margin: EdgeInsets.only(right: 3.w),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.contentDetailScreen,
+                      arguments: movie,
+                    );
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
+                                child: AspectRatio(
+                                  aspectRatio: 2/3,
+                                  child: CustomImageWidget(
+                                    imageUrl: movie.posterUrl ?? '',
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
                                   ),
-                                ],
+                                ),
                               ),
-                              child: Stack(
-                                children: [
-                                  ClipRRect(
+                              // Gradient overlay
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
-                                    child: AspectRatio(
-                                      aspectRatio: 2/3,
-                                      child: CustomImageWidget(
-                                        imageUrl: movie.posterUrl ?? '',
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                      ),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.black.withValues(alpha: 0.7),
+                                      ],
                                     ),
                                   ),
-                                  // Gradient overlay
-                                  Positioned.fill(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Colors.transparent,
-                                            Colors.black.withValues(alpha: 0.7),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  // Remove from favorites button
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: GestureDetector(
-                                      onTap: () => _removeFromFavorites(movie),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black.withValues(alpha: 0.6),
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: const Icon(
-                                          Icons.favorite,
-                                          color: Color(0xFFE50914),
-                                          size: 18,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  // Rating
-                                  Positioned(
-                                    bottom: 8,
-                                    right: 8,
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFE50914),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(Icons.star, color: Colors.white, size: 12),
-                                          SizedBox(width: 1.w),
-                                          Text(
-                                            movie.rating.toStringAsFixed(1),
-                                            style: TextStyle(
-                                              fontSize: 10.sp,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+                              // Remove from favorites button
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: () => _removeFromFavorites(movie),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.6),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Icon(
+                                      Icons.favorite,
+                                      color: Color(0xFFE50914),
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Rating
+                              Positioned(
+                                bottom: 8,
+                                right: 8,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE50914),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.star, color: Colors.white, size: 12),
+                                      SizedBox(width: 1.w),
+                                      Text(
+                                        movie.rating.toStringAsFixed(1),
+                                        style: TextStyle(
+                                          fontSize: 10.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 1.h),
-                          Text(
-                            movie.title,
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
+                      SizedBox(height: 1.h),
+                      Text(
+                        movie.title,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ],
     );
   }
@@ -1064,208 +1650,208 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         SizedBox(height: 2.h),
         _userPlaylists.isEmpty
-          ? Container(
-              padding: EdgeInsets.all(6.w),
-              width: 450,
+            ? Container(
+          padding: EdgeInsets.all(6.w),
+          width: 450,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.playlist_add,
+                size: 48,
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                'Chưa có playlist nào',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 16.sp,
+                ),
+              ),
+              SizedBox(height: 2.h),
+              ElevatedButton.icon(
+                onPressed: _showCreatePlaylistDialog,
+                icon: const Icon(Icons.add),
+                label: const Text('Tạo playlist đầu tiên'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE50914),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        )
+            : ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _userPlaylists.length,
+          itemBuilder: (context, index) {
+            final playlist = _userPlaylists[index];
+            final durationHours = (playlist.totalDuration / 60).floor();
+            final durationMinutes = playlist.totalDuration % 60;
+            final durationText = durationHours > 0
+                ? '${durationHours}h ${durationMinutes}m'
+                : '${durationMinutes}m';
+
+            return Container(
+              margin: EdgeInsets.only(bottom: 2.h),
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A1A),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
               ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.playlist_add,
-                    size: 48,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    'Chưa có playlist nào',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 16.sp,
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  ElevatedButton.icon(
-                    onPressed: _showCreatePlaylistDialog,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Tạo playlist đầu tiên'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE50914),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _userPlaylists.length,
-              itemBuilder: (context, index) {
-                final playlist = _userPlaylists[index];
-                final durationHours = (playlist.totalDuration / 60).floor();
-                final durationMinutes = playlist.totalDuration % 60;
-                final durationText = durationHours > 0 
-                    ? '${durationHours}h ${durationMinutes}m'
-                    : '${durationMinutes}m';
-                
-                return Container(
-                  margin: EdgeInsets.only(bottom: 2.h),
+              child: ListTile(
+                contentPadding: EdgeInsets.all(3.w),
+                leading: Container(
+                  width: 60,
+                  height: 60,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    gradient: playlist.isDefault
+                        ? const LinearGradient(colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)])
+                        : const LinearGradient(colors: [Color(0xFF667eea), Color(0xFF764ba2)]),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.all(3.w),
-                    leading: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        gradient: playlist.isDefault 
-                            ? const LinearGradient(colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)])
-                            : const LinearGradient(colors: [Color(0xFF667eea), Color(0xFF764ba2)]),
-                        borderRadius: BorderRadius.circular(12),
+                  child: Icon(
+                    playlist.isDefault
+                        ? Icons.star
+                        : playlist.isPublic
+                        ? Icons.public
+                        : Icons.playlist_play,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                title: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        playlist.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16.sp,
+                          color: Colors.white,
+                        ),
                       ),
-                      child: Icon(
-                        playlist.isDefault 
-                            ? Icons.star
-                            : playlist.isPublic 
-                                ? Icons.public
-                                : Icons.playlist_play,
-                        color: Colors.white,
-                        size: 24,
+                    ),
+                    if (playlist.isPublic)
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4ECDC4),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'Công khai',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                    title: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            playlist.name,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16.sp,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        if (playlist.isPublic)
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4ECDC4),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'Công khai',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 0.5.h),
-                        Text(
-                          '${playlist.movieCount} phim • $durationText',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 14.sp,
-                          ),
-                        ),
-                        if (playlist.description.isNotEmpty)
-                          Padding(
-                            padding: EdgeInsets.only(top: 0.5.h),
-                            child: Text(
-                              playlist.description,
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: Colors.white.withValues(alpha: 0.6),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        SizedBox(height: 0.5.h),
-                        Text(
-                          'Cập nhật ${_getTimeAgo(playlist.updatedAt)}',
-                          style: TextStyle(
-                            fontSize: 11.sp,
-                            color: Colors.white.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: PopupMenuButton<String>(
-                      icon: Icon(
-                        Icons.more_vert,
+                  ],
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 0.5.h),
+                    Text(
+                      '${playlist.movieCount} phim • $durationText',
+                      style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 14.sp,
                       ),
-                      color: const Color(0xFF2A2A2A),
-                      onSelected: (value) => _handlePlaylistAction(value, playlist),
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'view',
-                          child: ListTile(
-                            leading: const Icon(Icons.visibility, color: Colors.white),
-                            title: const Text('Xem playlist', style: TextStyle(color: Colors.white)),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                        if (!playlist.isDefault)
-                          PopupMenuItem(
-                            value: 'edit',
-                            child: ListTile(
-                              leading: const Icon(Icons.edit, color: Colors.white),
-                              title: const Text('Chỉnh sửa', style: TextStyle(color: Colors.white)),
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ),
-                        PopupMenuItem(
-                          value: 'share',
-                          child: ListTile(
-                            leading: const Icon(Icons.share, color: Colors.white),
-                            title: const Text('Chia sẻ', style: TextStyle(color: Colors.white)),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                        if (!playlist.isDefault)
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: ListTile(
-                              leading: const Icon(Icons.delete, color: Colors.red),
-                              title: const Text('Xóa', style: TextStyle(color: Colors.red)),
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ),
-                      ],
                     ),
-                    onTap: () {
-                      // TODO: Navigate to playlist detail
-                      _handlePlaylistAction('view', playlist);
-                    },
+                    if (playlist.description.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: 0.5.h),
+                        child: Text(
+                          playlist.description,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: Colors.white.withValues(alpha: 0.6),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    SizedBox(height: 0.5.h),
+                    Text(
+                      'Cập nhật ${_getTimeAgo(playlist.updatedAt)}',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
+                trailing: PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
-                );
-              },
-            ),
+                  color: const Color(0xFF2A2A2A),
+                  onSelected: (value) => _handlePlaylistAction(value, playlist),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'view',
+                      child: ListTile(
+                        leading: const Icon(Icons.visibility, color: Colors.white),
+                        title: const Text('Xem playlist', style: TextStyle(color: Colors.white)),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    if (!playlist.isDefault)
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: ListTile(
+                          leading: const Icon(Icons.edit, color: Colors.white),
+                          title: const Text('Chỉnh sửa', style: TextStyle(color: Colors.white)),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    PopupMenuItem(
+                      value: 'share',
+                      child: ListTile(
+                        leading: const Icon(Icons.share, color: Colors.white),
+                        title: const Text('Chia sẻ', style: TextStyle(color: Colors.white)),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    if (!playlist.isDefault)
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: ListTile(
+                          leading: const Icon(Icons.delete, color: Colors.red),
+                          title: const Text('Xóa', style: TextStyle(color: Colors.red)),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  // TODO: Navigate to playlist detail
+                  _handlePlaylistAction('view', playlist);
+                },
+              ),
+            );
+          },
+        ),
       ],
     );
   }
 
   Widget _buildRecentWatchHistorySection() {
     final recentHistory = _watchHistory.take(5).toList();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1293,168 +1879,168 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         recentHistory.isEmpty
-          ? Container(
-              padding: EdgeInsets.all(6.w),
+            ? Container(
+          padding: EdgeInsets.all(6.w),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.history,
+                size: 48,
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                'Chưa có lịch sử xem nào',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 16.sp,
+                ),
+              ),
+            ],
+          ),
+        )
+            : ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: recentHistory.length,
+          itemBuilder: (context, index) {
+            final history = recentHistory[index];
+            final movie = _movieCache[history.movieId];
+            final timeAgo = _getTimeAgo(history.lastWatchedAt);
+            final watchMinutes = (history.watchDuration / 60).round();
+            final progressPercentage = history.progressPercentage.round();
+
+            return Container(
+              margin: EdgeInsets.only(bottom: 2.h),
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A1A),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
               ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.history,
-                    size: 48,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    'Chưa có lịch sử xem nào',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 16.sp,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: recentHistory.length,
-              itemBuilder: (context, index) {
-                final history = recentHistory[index];
-                final movie = _movieCache[history.movieId];
-                final timeAgo = _getTimeAgo(history.lastWatchedAt);
-                final watchMinutes = (history.watchDuration / 60).round();
-                final progressPercentage = history.progressPercentage.round();
-                
-                return Container(
-                  margin: EdgeInsets.only(bottom: 2.h),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                  ),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.all(3.w),
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: SizedBox(
-                        width: 60,
-                        height: 60,
-                        child: Stack(
-                          children: [
-                            CustomImageWidget(
-                              imageUrl: movie?.posterUrl ?? '',
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                            ),
-                            // Progress indicator
-                            if (progressPercentage > 0)
-                              Positioned(
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
+              child: ListTile(
+                contentPadding: EdgeInsets.all(3.w),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 60,
+                    height: 60,
+                    child: Stack(
+                      children: [
+                        CustomImageWidget(
+                          imageUrl: movie?.posterUrl ?? '',
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                        // Progress indicator
+                        if (progressPercentage > 0)
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.3),
+                              ),
+                              child: FractionallySizedBox(
+                                alignment: Alignment.centerLeft,
+                                widthFactor: progressPercentage / 100,
                                 child: Container(
-                                  height: 4,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                  ),
-                                  child: FractionallySizedBox(
-                                    alignment: Alignment.centerLeft,
-                                    widthFactor: progressPercentage / 100,
-                                    child: Container(
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFE50914),
-                                      ),
-                                    ),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFE50914),
                                   ),
                                 ),
                               ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    title: Text(
-                      movie?.title ?? 'Phim không tìm thấy',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16.sp,
-                        color: Colors.white,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 0.5.h),
-                        Text(
-                          'Xem $watchMinutes phút • $progressPercentage%',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 14.sp,
-                          ),
-                        ),
-                        SizedBox(height: 0.5.h),
-                        Text(
-                          timeAgo,
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: Colors.white.withValues(alpha: 0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (history.isCompleted)
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4ECDC4),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'Hoàn thành',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
                             ),
                           ),
-                        SizedBox(width: 2.w),
-                        Container(
-                          padding: EdgeInsets.all(1.w),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE50914),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(
-                            Icons.play_arrow,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
                       ],
                     ),
-                    onTap: () {
-                      if (movie != null) {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.contentDetailScreen,
-                          arguments: movie,
-                        );
-                      }
-                    },
                   ),
-                );
-              },
-            ),
+                ),
+                title: Text(
+                  movie?.title ?? 'Phim không tìm thấy',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16.sp,
+                    color: Colors.white,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 0.5.h),
+                    Text(
+                      'Xem $watchMinutes phút • $progressPercentage%',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                    SizedBox(height: 0.5.h),
+                    Text(
+                      timeAgo,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (history.isCompleted)
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4ECDC4),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'Hoàn thành',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    SizedBox(width: 2.w),
+                    Container(
+                      padding: EdgeInsets.all(1.w),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE50914),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.play_arrow,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  if (movie != null) {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.contentDetailScreen,
+                      arguments: movie,
+                    );
+                  }
+                },
+              ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -1549,7 +2135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       leading: Container(
         padding: EdgeInsets.all(2.w),
         decoration: BoxDecoration(
-          color: isDestructive 
+          color: isDestructive
               ? Colors.red.withValues(alpha: 0.1)
               : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
@@ -1571,7 +2157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       trailing: Icon(
         Icons.arrow_forward_ios,
         size: 16,
-        color: isDestructive 
+        color: isDestructive
             ? Colors.red.withValues(alpha: 0.7)
             : Colors.white.withValues(alpha: 0.5),
       ),
