@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/movie_model.dart';
 import 'firebase_service.dart';
 
-
 class MovieService {
   static final CollectionReference _moviesCollection = FirebaseService.moviesCollection;
 
