@@ -21,7 +21,7 @@ class WatchHistoryModel {
     required this.lastWatchedAt,
   });
 
-  // Calculate watch progress percentage
+  // Calculate watch progress percentages
   double get progressPercentage {
     if (totalDuration == 0) return 0.0;
     return (watchDuration / totalDuration) * 100;
