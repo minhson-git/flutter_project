@@ -18,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _currentBottomNavIndex = 0;
   bool _isRefreshing = false;
 
-  // Mock data for content
+  // Mock data for contents
   final List<Map<String, dynamic>> continueWatchingData = [
     {
       "id": 1,
