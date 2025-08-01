@@ -69,6 +69,7 @@ class WatchHistoryModel {
     DateTime? watchedAt,
     DateTime? lastWatchedAt,
   }) {
+
     return WatchHistoryModel(
       id: id ?? this.id,
       userId: userId ?? this.userId,
