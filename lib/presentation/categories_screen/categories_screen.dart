@@ -223,7 +223,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       }
     } catch (e) {
       print('❌ Error loading movie counts: $e');
-      // Set default counts if error
+      // Set default counts if having error
       for (final category in _categories) {
         _categoryMovieCounts[category.name] = 0;
       }
