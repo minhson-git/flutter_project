@@ -736,18 +736,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
         title: Text(
-          'Xóa khỏi playlist',
+          'Remove from playlist',
           style: const TextStyle(color: Colors.white),
         ),
         content: Text(
-          'Bạn có chắc chắn muốn xóa "${movie.title}" khỏi playlist "${playlist.name}"?',
+          'Are you sure remove "${movie.title}" from playlist "${playlist.name}"?',
           style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Hủy',
+              'Cancel',
               style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
             ),
           ),
@@ -762,7 +762,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: Text("Xóa"),
+            child: Text("Remove"),
           ),
         ],
       ),
