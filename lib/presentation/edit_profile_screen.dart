@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../../../core/app_export.dart';
+import '../models/user_model.dart';
 
 
 class EditProfileScreen extends StatefulWidget {
@@ -72,7 +73,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi cập nhật: $e'),
+            content: Text('Update Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -89,7 +90,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D0D),
       appBar: AppBar(
-        title: const Text('Chỉnh sửa thông tin'),
+        title: const Text('Edit Information'),
         backgroundColor: const Color(0xFF0D0D0D),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -106,7 +107,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   )
                 : const Text(
-                    'Lưu',
+                    'Save',
                     style: TextStyle(
                       color: Color(0xFFE50914),
                       fontWeight: FontWeight.bold,
