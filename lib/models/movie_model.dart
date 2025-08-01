@@ -150,7 +150,7 @@ class MovieModel {
     );
   }
 
-  // Helper method to safely parse string lists
+  //Helper method to safely parse string lists
   static List<String> _parseStringList(dynamic data) {
     if (data == null) return [];
     if (data is List) {
